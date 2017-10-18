@@ -1,7 +1,9 @@
-﻿using System;
+﻿using pk3DS.Core;
+using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using pk3DS.Core.Randomizers;
 
 namespace pk3DS
 {
@@ -183,8 +185,8 @@ namespace pk3DS
             "Kyurem-White - 1",
             "Kyurem-Black - 2",
             "",
-            "Keldeo-Usual - 0",
-            "Keldeo-Resolution - 1",
+            "Keldeo-Ordinary - 0",
+            "Keldeo-Resolute - 1",
             "",
             "Meloetta-Aria - 0",
             "Meloetta-Pirouette - 1",
@@ -205,7 +207,7 @@ namespace pk3DS
             "Floette-Yellow - 1",
             "Floette-Orange - 2",
             "Floette-Blue - 3",
-            "Floette-Wite - 4",
+            "Floette-White - 4",
             "Floette-Eternal - 5",
             "",
             "Florges-Red - 0",
@@ -214,19 +216,19 @@ namespace pk3DS
             "Florges-Blue - 3",
             "Florges-White - 4",
             "",
-            "Furfrou- Natural - 0",
-            "Furfrou- Heart - 1",
-            "Furfrou- Star - 2",
-            "Furfrou- Diamond - 3",
-            "Furfrou- Deputante - 4",
-            "Furfrou- Matron - 5",
-            "Furfrou- Dandy - 6",
-            "Furfrou- La Reine- 7",
-            "Furfrou- Kabuki - 8",
-            "Furfrou- Pharaoh - 9",
+            "Furfrou-Natural - 0",
+            "Furfrou-Heart - 1",
+            "Furfrou-Star - 2",
+            "Furfrou-Diamond - 3",
+            "Furfrou-Deputante - 4",
+            "Furfrou-Matron - 5",
+            "Furfrou-Dandy - 6",
+            "Furfrou-La Reine- 7",
+            "Furfrou-Kabuki - 8",
+            "Furfrou-Pharaoh - 9",
             "",
-            "Aegislash- Shield - 0",
-            "Aegislash- Blade - 0",
+            "Aegislash-Shield - 0",
+            "Aegislash-Blade - 0",
             "",
             "Vivillon-Icy Snow - 0",
             "Vivillon-Polar - 1",
@@ -249,12 +251,17 @@ namespace pk3DS
             "Vivillon-Fancy - 18",
             "Vivillon-Poké Ball - 19",
             "",
-            "Pumpkaboo/Gourgeist-Small - 0",
-            "Pumpkaboo/Gourgeist-Average - 1",
-            "Pumpkaboo/Gourgeist-Large - 2",
-            "Pumpkaboo/Gourgeist-Super - 3",
+            "Pumpkaboo-Small - 0",
+            "Pumpkaboo-Average - 1",
+            "Pumpkaboo-Large - 2",
+            "Pumpkaboo-Super - 3",
             "",
-            "Hoopa-Normal - 0",
+            "Gourgeist-Small - 0",
+            "Gourgeist-Average - 1",
+            "Gourgeist-Large - 2",
+            "Gourgeist-Super - 3",
+            "",
+            "Hoopa-Confined - 0",
             "Hoopa-Unbound - 1",
             "",
             "Megas-Normal - 0",
@@ -279,7 +286,7 @@ namespace pk3DS
 
         private void RSWE_Load()
         {
-            specieslist = Main.getText(TextName.SpeciesNames);
+            specieslist = Main.Config.getText(TextName.SpeciesNames);
             specieslist[0] = "---";
 
             foreach (string s in formlist)
@@ -309,7 +316,7 @@ namespace pk3DS
             Array.Sort(encdatapaths);
             filepaths = new string[encdatapaths.Length - 2];
             Array.Copy(encdatapaths, 2, filepaths, 0, filepaths.Length);
-            metRS_00000 = Main.getText(TextName.metlist_000000);
+            metRS_00000 = Main.Config.getText(TextName.metlist_000000);
             zonedata = File.ReadAllBytes(encdatapaths[0]);
             decStorage = File.ReadAllBytes(encdatapaths[1]);
             LocationNames = new string[filepaths.Length];
@@ -585,18 +592,31 @@ namespace pk3DS
         // Randomization
         private void B_Randomize_Click(object sender, EventArgs e)
         {
-            if (Util.Prompt(MessageBoxButtons.YesNo, "Randomize all? Cannot undo.", "Double check Randomization settings @ Horde Tab.") != DialogResult.Yes) return;
+            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Randomize all? Cannot undo.", "Double check Randomization settings in the Horde tab.") != DialogResult.Yes) return;
             
             Enabled = false;
 
             // Calculate % diff we will apply to each level
-            decimal leveldiff = (100 + NUD_LevelAmp.Value) / 100;
+            decimal leveldiff = NUD_LevelAmp.Value;
 
             // Nonrepeating List Start
-            int[] sL = Randomizer.getSpeciesList(CHK_G1.Checked, CHK_G2.Checked, CHK_G3.Checked,
-                CHK_G4.Checked, CHK_G5.Checked, CHK_G6.Checked, false, CHK_L.Checked, CHK_E.Checked);
+            var rand = new SpeciesRandomizer(Main.Config)
+            {
+                G1 = CHK_G1.Checked,
+                G2 = CHK_G2.Checked,
+                G3 = CHK_G3.Checked,
+                G4 = CHK_G4.Checked,
+                G5 = CHK_G5.Checked,
+                G6 = CHK_G6.Checked,
 
-            int ctr = 0;
+                L = CHK_L.Checked,
+                E = CHK_E.Checked,
+                Shedinja = false,
+
+                rBST = CHK_BST.Checked,
+            };
+            rand.Initialize();
+
             int[] slotArray = Enumerable.Range(0, max.Length).Select(a => a).ToArray();
 
             for (int i = 0; i < CB_LocationID.Items.Count; i++) // for every location
@@ -623,41 +643,31 @@ namespace pk3DS
                 int[] RandomList = new int[cons > 18 ? 18 - cons / 8 : cons];
 
                 // Fill Location List
-                if (!CHK_BST.Checked)
-                    for (int z = 0; z < RandomList.Length; z++)
-                        RandomList[z] = Randomizer.getRandomSpecies(ref sL, ref ctr);
-                else
-                {
-                    int oldBST = 0;
-                    for (int s = 0; s < max.Length; s++)
-                        if (spec[s].SelectedIndex > 0)
-                        { oldBST = Main.Config.Personal[spec[s + 2].SelectedIndex].BST; break; }
-
-                    for (int z = 0; z < RandomList.Length; z++)
-                    {
-                        int species = Randomizer.getRandomSpecies(ref sL, ref ctr);
-                        int newBST = Main.Config.Personal[species].BST;
-                        while (!(newBST * 4 / 5 < oldBST && newBST * 6 / 5 > oldBST))
-                        { species = sL[rand.Next(1, sL.Length)]; newBST = Main.Config.Personal[species].BST; }
-                        RandomList[z] = species;
-                    }
-                }
+                for (int s = 0; s < RandomList.Length; s++)
+                    RandomList[s] = rand.GetRandomSpecies(spec[s].SelectedIndex);
 
                 // Assign Slots
                 while (used < RandomList.Distinct().Count() || used > 18) // Can just arbitrarily assign slots.
                 {
-                    int ctrSingle = 0;
                     Util.Shuffle(slotArray);
                     for (int s = 0; s < max.Length; s++)
                     {
                         int slot = slotArray[s];
                         if (spec[slot].SelectedIndex != 0) // If the slot is in use
-                            list[slot] = Randomizer.getRandomSpecies(ref RandomList, ref ctrSingle);
+                            list[slot] = RandomList[Util.rand.Next(0, RandomList.Length)];
                     }
                     used = countUnique(list);
                     if (used != RandomList.Length)
                         ShuffleSlots(ref list, RandomList.Length);
                     used = countUnique(list);
+                }
+                // If Distinct Hordes are selected, homogenize
+                int hordeslot = 0;
+                if (CHK_HomogeneousHordes.Checked)
+                for (int slot = max.Length - 15; slot < max.Length; slot++)
+                {
+                    list[slot] = list[slot - hordeslot % 5];
+                    hordeslot++;
                 }
 
                 // Fill Slots
@@ -671,7 +681,7 @@ namespace pk3DS
                 B_Save_Click(sender, e);
             }
             Enabled = true;
-            Util.Alert("Randomized!");
+            WinFormsUtil.Alert("Randomized all Wild Encounters according to specification!", "Press the Dump Tables button to view the new Wild Encounter information!");
         }
         private int countUnique(int[] list)
         {
@@ -770,11 +780,13 @@ namespace pk3DS
 
         private void modifyLevels(object sender, EventArgs e)
         {
+            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Modify all current Level ranges?", "Cannot undo.") != DialogResult.Yes) return;
+
             // Disable Interface while modifying
             Enabled = false;
 
             // Calculate % diff we will apply to each level
-            decimal leveldiff = (100 + NUD_LevelAmp.Value) / 100;
+            decimal leveldiff = NUD_LevelAmp.Value;
 
             // Cycle through each location to modify levels
             for (int i = 0; i < CB_LocationID.Items.Count; i++) // for every location
@@ -784,13 +796,15 @@ namespace pk3DS
 
                 // Amp Levels
                 for (int l = 0; l < max.Length; l++)
-                    min[l].Value = max[l].Value = max[l].Value <= 1 ? max[l].Value : Math.Max(1, Math.Min(100, (int)(leveldiff * max[l].Value)));
+                    if (min[l].Value > 1)
+                        min[l].Value = max[l].Value = Randomizer.getModifiedLevel((int)max[l].Value, leveldiff);
 
                 // Save Changes
                 B_Save_Click(sender, e);
             }
             // Enable Interface... modification complete.
             Enabled = true;
+            WinFormsUtil.Alert("Modified all Level ranges according to specification!", "Press the Dump Tables button to view the new Level ranges!");
         }
     }
 }

@@ -1,7 +1,9 @@
-﻿using System;
+﻿using pk3DS.Core;
+using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using pk3DS.Core.Randomizers;
 
 namespace pk3DS
 {
@@ -74,7 +76,6 @@ namespace pk3DS
                 NUP_HordeBForme1, NUP_HordeBForme2, NUP_HordeBForme3, NUP_HordeBForme4, NUP_HordeBForme5,
                 NUP_HordeCForme1, NUP_HordeCForme2, NUP_HordeCForme3, NUP_HordeCForme4, NUP_HordeCForme5,
             };
-
             formlist = new[] { "Unown-A - 0",
             "Unown-B - 1",
             "Unown-C - 2",
@@ -192,8 +193,8 @@ namespace pk3DS
             "Kyurem-White - 1",
             "Kyurem-Black - 2",
             "",
-            "Keldeo-Usual - 0",
-            "Keldeo-Resolution - 1",
+            "Keldeo-Ordinary - 0",
+            "Keldeo-Resolute - 1",
             "",
             "Meloetta-Aria - 0",
             "Meloetta-Pirouette - 1",
@@ -214,7 +215,7 @@ namespace pk3DS
             "Floette-Yellow - 1",
             "Floette-Orange - 2",
             "Floette-Blue - 3",
-            "Floette-Wite - 4",
+            "Floette-White - 4",
             "Floette-Eternal - 5",
             "",
             "Florges-Red - 0",
@@ -223,19 +224,19 @@ namespace pk3DS
             "Florges-Blue - 3",
             "Florges-White - 4",
             "",
-            "Furfrou- Natural - 0",
-            "Furfrou- Heart - 1",
-            "Furfrou- Star - 2",
-            "Furfrou- Diamond - 3",
-            "Furfrou- Deputante - 4",
-            "Furfrou- Matron - 5",
-            "Furfrou- Dandy - 6",
-            "Furfrou- La Reine- 7",
-            "Furfrou- Kabuki - 8",
-            "Furfrou- Pharaoh - 9",
+            "Furfrou-Natural - 0",
+            "Furfrou-Heart - 1",
+            "Furfrou-Star - 2",
+            "Furfrou-Diamond - 3",
+            "Furfrou-Deputante - 4",
+            "Furfrou-Matron - 5",
+            "Furfrou-Dandy - 6",
+            "Furfrou-La Reine- 7",
+            "Furfrou-Kabuki - 8",
+            "Furfrou-Pharaoh - 9",
             "",
-            "Aegislash- Shield - 0",
-            "Aegislash- Blade - 0",
+            "Aegislash-Shield - 0",
+            "Aegislash-Blade - 0",
             "",
             "Vivillon-Icy Snow - 0",
             "Vivillon-Polar - 1",
@@ -258,10 +259,15 @@ namespace pk3DS
             "Vivillon-Fancy - 18",
             "Vivillon-Poké Ball - 19",
             "",
-            "Pumpkaboo/Gourgeist-Small - 0",
-            "Pumpkaboo/Gourgeist-Average - 1",
-            "Pumpkaboo/Gourgeist-Large - 2",
-            "Pumpkaboo/Gourgeist-Super - 3",
+            "Pumpkaboo-Small - 0",
+            "Pumpkaboo-Average - 1",
+            "Pumpkaboo-Large - 2",
+            "Pumpkaboo-Super - 3",
+            "",
+            "Gourgeist-Small - 0",
+            "Gourgeist-Average - 1",
+            "Gourgeist-Large - 2",
+            "Gourgeist-Super - 3",
             "",
             "Megas-Normal - 0",
             "Megas-Mega (X) - 1",
@@ -284,7 +290,7 @@ namespace pk3DS
 
         private void Load_XYWE()
         {
-            specieslist = Main.getText(TextName.SpeciesNames);
+            specieslist = Main.Config.getText(TextName.SpeciesNames);
             specieslist[0] = "---";
 
             CB_FormeList.Items.AddRange(formlist);
@@ -305,7 +311,7 @@ namespace pk3DS
             Array.Sort(encdatapaths);
             filepaths = new string[encdatapaths.Length - 1];
             Array.Copy(encdatapaths, 1, filepaths, 0, filepaths.Length);
-            metXY_00000 = Main.getText(TextName.metlist_000000);
+            metXY_00000 = Main.Config.getText(TextName.metlist_000000);
             zonedata = File.ReadAllBytes(encdatapaths[0]);
             LocationNames = new string[filepaths.Length];
             for (int f = 0; f < filepaths.Length; f++)
@@ -497,18 +503,29 @@ namespace pk3DS
 
         private void B_Randomize_Click(object sender, EventArgs e)
         {
-            if (Util.Prompt(MessageBoxButtons.YesNo, "Randomize all?", "Cannot undo.") != DialogResult.Yes) return;
+            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Randomize all? Cannot undo.", "Double check Randomization settings in the Horde tab.") != DialogResult.Yes) return;
 
             Enabled = false;
 
             // Calculate % diff we will apply to each level
             decimal leveldiff = (100 + NUD_LevelAmp.Value) / 100;
 
-            // Nonrepeating List Start
-            int[] sL = Randomizer.getSpeciesList(CHK_G1.Checked, CHK_G2.Checked, CHK_G3.Checked,
-                CHK_G4.Checked, CHK_G5.Checked, CHK_G6.Checked, false, CHK_L.Checked, CHK_E.Checked);
+            var rand = new SpeciesRandomizer(Main.Config)
+            {
+                G1 = CHK_G1.Checked,
+                G2 = CHK_G2.Checked,
+                G3 = CHK_G3.Checked,
+                G4 = CHK_G4.Checked,
+                G5 = CHK_G5.Checked,
+                G6 = CHK_G6.Checked,
 
-            int ctr = 0;
+                L = CHK_L.Checked,
+                E = CHK_E.Checked,
+                Shedinja = false,
+
+                rBST = CHK_BST.Checked,
+            };
+            rand.Initialize();
 
             for (int i = 0; i < CB_LocationID.Items.Count; i++) // for every location
             {
@@ -520,27 +537,32 @@ namespace pk3DS
                     for (int l = 0; l < max.Length; l++)
                         min[l].Value = max[l].Value = max[l].Value <= 1 ? max[l].Value : Math.Max(1, Math.Min(100, (int)(leveldiff * max[l].Value)));
 
+
+                // If Distinct Hordes are selected, homogenize
+                int hordeslot = 0;
                 for (int slot = 0; slot < max.Length; slot++)
                 {
                     if (spec[slot].SelectedIndex == 0) continue;
-
-                    int species = Randomizer.getRandomSpecies(ref sL, ref ctr);
-
-                    if (CHK_BST.Checked)
+                    if (CHK_HomogeneousHordes.Checked && slot >= max.Length - 15)
                     {
-                        int oldBST = Main.Config.Personal[spec[slot].SelectedIndex].BST;
-                        int newBST = Main.Config.Personal[species].BST;
-                        while (!(newBST * 4 / 5 < oldBST && newBST * 6 / 5 > oldBST))
-                        { species = sL[rand.Next(1, sL.Length)]; newBST = Main.Config.Personal[species].BST; }
+                        int shift = hordeslot % 5;
+                        hordeslot++;
+                        if (shift != 0)
+                        {
+                            spec[slot].SelectedIndex = spec[slot - shift].SelectedIndex;
+                            form[slot].Value = form[slot - shift].Value;
+                            continue;
+                        }
                     }
 
+                    int species = rand.GetRandomSpecies(spec[slot].SelectedIndex);
                     spec[slot].SelectedIndex = species;
-                    setRandomForm(slot, spec[slot].SelectedIndex);
+                    setRandomForm(slot, species);
                 }
                 B_Save_Click(sender, e);
             }
             Enabled = true;
-            Util.Alert("Randomized!");
+            WinFormsUtil.Alert("Randomized all Wild Encounters according to specification!", "Press the Dump Tables button to view the new Wild Encounter information!");
         }
         private void setRandomForm(int slot, int species)
         {
@@ -593,32 +615,19 @@ namespace pk3DS
             toret += "======" + Environment.NewLine;
             if (hasData())
             {
-                toret += "Grass: " + label31.Text + " - " + CB_Grass1.Text + " (Level " + NUP_GrassMin1.Text + ", Forme: " + NUP_GrassForme1.Text + "), " + label32.Text + " - " + CB_Grass2.Text + " (Level " + NUP_GrassMin2.Text + ", Forme: " + NUP_GrassForme2.Text + "), " + label33.Text + " - " + CB_Grass3.Text + " (Level " + NUP_GrassMin3.Text + ", Forme: " + NUP_GrassForme3.Text + "), " + label34.Text + " - " + CB_Grass4.Text + " (Level " + NUP_GrassMin4.Text + ", Forme: " + NUP_GrassForme4.Text + "), " + label35.Text + " - " + CB_Grass5.Text + " (Level " + NUP_GrassMin5.Text + ", Forme: " + NUP_GrassForme5.Text + "), " + label36.Text + " - " + CB_Grass6.Text + " (Level " + NUP_GrassMin6.Text + ", Forme: " + NUP_GrassForme6.Text + "), " + label37.Text + " - " + CB_Grass7.Text + " (Level " + NUP_GrassMin7.Text + ", Forme: " + NUP_GrassForme7.Text + "), " + label38.Text + " - " + CB_Grass8.Text + " (Level " + NUP_GrassMin8.Text + ", Forme: " + NUP_GrassForme8.Text + "), " + label39.Text + " - " + CB_Grass9.Text + " (Level " + NUP_GrassMin9.Text + ", Forme: " + NUP_GrassForme9.Text + "), " + label40.Text + " - " + CB_Grass10.Text + " (Level " + NUP_GrassMin10.Text + ", Forme: " + NUP_GrassForme10.Text + "), " + label42.Text + " - " + CB_Grass11.Text + " (Level " + NUP_GrassMin11.Text + ", Forme: " + NUP_GrassForme11.Text + "), " + label41.Text + " - " + CB_Grass12.Text + " (Level " + NUP_GrassMin12.Text + ", Forme: " + NUP_GrassForme12.Text + ")" + Environment.NewLine;
-
-                toret += "Rough Terrain: " + label10.Text + " - " + CB_RT1.Text + " (Level " + NUP_RTMin1.Text + ", Forme: " + NUP_RTForme1.Text + "), " + label21.Text + " - " + CB_RT2.Text + " (Level " + NUP_RTMin2.Text + ", Forme: " + NUP_RTForme2.Text + "), " + label20.Text + " - " + CB_RT3.Text + " (Level " + NUP_RTMin3.Text + ", Forme: " + NUP_RTForme3.Text + "), " + label19.Text + " - " + CB_RT4.Text + " (Level " + NUP_RTMin4.Text + ", Forme: " + NUP_RTForme4.Text + "), " + label18.Text + " - " + CB_RT5.Text + " (Level " + NUP_RTMin5.Text + ", Forme: " + NUP_RTForme5.Text + "), " + label17.Text + " - " + CB_RT6.Text + " (Level " + NUP_RTMin6.Text + ", Forme: " + NUP_RTForme6.Text + "), " + label16.Text + " - " + CB_RT7.Text + " (Level " + NUP_RTMin7.Text + ", Forme: " + NUP_RTForme7.Text + "), " + label15.Text + " - " + CB_RT8.Text + " (Level " + NUP_RTMin8.Text + ", Forme: " + NUP_RTForme8.Text + "), " + label14.Text + " - " + CB_RT9.Text + " (Level " + NUP_RTMin9.Text + ", Forme: " + NUP_RTForme9.Text + "), " + label13.Text + " - " + CB_RT10.Text + " (Level " + NUP_RTMin10.Text + ", Forme: " + NUP_RTForme10.Text + "), " + label12.Text + " - " + CB_RT11.Text + " (Level " + NUP_RTMin11.Text + ", Forme: " + NUP_RTForme11.Text + "), " + label11.Text + " - " + CB_RT12.Text + " (Level " + NUP_RTMin12.Text + ", Forme: " + NUP_RTForme12.Text + ")" + Environment.NewLine;
-
-                toret += "Rock Smash: " + label111.Text + " - " + CB_RockSmash1.Text + " (Level " + NUP_RockSmashMin1.Text + ", Forme: " + NUP_RockSmashForme1.Text + "), " + label110.Text + " - " + CB_RockSmash2.Text + " (Level " + NUP_RockSmashMin2.Text + ", Forme: " + NUP_RockSmashForme2.Text + "), " + label109.Text + " - " + CB_RockSmash3.Text + " (Level " + NUP_RockSmashMin3.Text + ", Forme: " + NUP_RockSmashForme3.Text + "), " + label108.Text + " - " + CB_RockSmash4.Text + " (Level " + NUP_RockSmashMin4.Text + ", Forme: " + NUP_RockSmashForme4.Text + "), " + label107.Text + " - " + CB_RockSmash5.Text + " (Level " + NUP_RockSmashMin5.Text + ", Forme: " + NUP_RockSmashForme5.Text + ")" + Environment.NewLine;
-
-                toret += "Yellow Flowers: " + label54.Text + " - " + CB_Yellow1.Text + " (Level " + NUP_YellowMin1.Text + ", Forme: " + NUP_YellowForme1.Text + "), " + label65.Text + " - " + CB_Yellow2.Text + " (Level " + NUP_YellowMin2.Text + ", Forme: " + NUP_YellowForme2.Text + "), " + label64.Text + " - " + CB_Yellow3.Text + " (Level " + NUP_YellowMin3.Text + ", Forme: " + NUP_YellowForme3.Text + "), " + label63.Text + " - " + CB_Yellow4.Text + " (Level " + NUP_YellowMin4.Text + ", Forme: " + NUP_YellowForme4.Text + "), " + label62.Text + " - " + CB_Yellow5.Text + " (Level " + NUP_YellowMin5.Text + ", Forme: " + NUP_YellowForme5.Text + "), " + label61.Text + " - " + CB_Yellow6.Text + " (Level " + NUP_YellowMin6.Text + ", Forme: " + NUP_YellowForme6.Text + "), " + label60.Text + " - " + CB_Yellow7.Text + " (Level " + NUP_YellowMin7.Text + ", Forme: " + NUP_YellowForme7.Text + "), " + label59.Text + " - " + CB_Yellow8.Text + " (Level " + NUP_YellowMin8.Text + ", Forme: " + NUP_YellowForme8.Text + "), " + label58.Text + " - " + CB_Yellow9.Text + " (Level " + NUP_YellowMin9.Text + ", Forme: " + NUP_YellowForme9.Text + "), " + label57.Text + " - " + CB_Yellow10.Text + " (Level " + NUP_YellowMin10.Text + ", Forme: " + NUP_YellowForme10.Text + "), " + label56.Text + " - " + CB_Yellow11.Text + " (Level " + NUP_YellowMin11.Text + ", Forme: " + NUP_YellowForme11.Text + "), " + label55.Text + " - " + CB_Yellow12.Text + " (Level " + NUP_YellowMin12.Text + ", Forme: " + NUP_YellowForme12.Text + ")" + Environment.NewLine;
-
-                toret += "Purple Flowers: " + label70.Text + " - " + CB_Purple1.Text + " (Level " + NUP_PurpleMin1.Text + ", Forme: " + NUP_PurpleForme1.Text + "), " + label81.Text + " - " + CB_Purple2.Text + " (Level " + NUP_PurpleMin2.Text + ", Forme: " + NUP_PurpleForme2.Text + "), " + label80.Text + " - " + CB_Purple3.Text + " (Level " + NUP_PurpleMin3.Text + ", Forme: " + NUP_PurpleForme3.Text + "), " + label79.Text + " - " + CB_Purple4.Text + " (Level " + NUP_PurpleMin4.Text + ", Forme: " + NUP_PurpleForme4.Text + "), " + label78.Text + " - " + CB_Purple5.Text + " (Level " + NUP_PurpleMin5.Text + ", Forme: " + NUP_PurpleForme5.Text + "), " + label77.Text + " - " + CB_Purple6.Text + " (Level " + NUP_PurpleMin6.Text + ", Forme: " + NUP_PurpleForme6.Text + "), " + label76.Text + " - " + CB_Purple7.Text + " (Level " + NUP_PurpleMin7.Text + ", Forme: " + NUP_PurpleForme7.Text + "), " + label75.Text + " - " + CB_Purple8.Text + " (Level " + NUP_PurpleMin8.Text + ", Forme: " + NUP_PurpleForme8.Text + "), " + label74.Text + " - " + CB_Purple9.Text + " (Level " + NUP_PurpleMin9.Text + ", Forme: " + NUP_PurpleForme9.Text + "), " + label73.Text + " - " + CB_Purple10.Text + " (Level " + NUP_PurpleMin10.Text + ", Forme: " + NUP_PurpleForme10.Text + "), " + label72.Text + " - " + CB_Purple11.Text + " (Level " + NUP_PurpleMin11.Text + ", Forme: " + NUP_PurpleForme11.Text + "), " + label71.Text + " - " + CB_Purple12.Text + " (Level " + NUP_PurpleMin12.Text + ", Forme: " + NUP_PurpleForme12.Text + ")" + Environment.NewLine;
-
-                toret += "Red Flowers: " + label86.Text + " - " + CB_Red1.Text + " (Level " + NUP_RedMin1.Text + ", Forme: " + NUP_RedForme1.Text + "), " + label97.Text + " - " + CB_Red2.Text + " (Level " + NUP_RedMin2.Text + ", Forme: " + NUP_RedForme2.Text + "), " + label96.Text + " - " + CB_Red3.Text + " (Level " + NUP_RedMin3.Text + ", Forme: " + NUP_RedForme3.Text + "), " + label95.Text + " - " + CB_Red4.Text + " (Level " + NUP_RedMin4.Text + ", Forme: " + NUP_RedForme4.Text + "), " + label94.Text + " - " + CB_Red5.Text + " (Level " + NUP_RedMin5.Text + ", Forme: " + NUP_RedForme5.Text + "), " + label93.Text + " - " + CB_Red6.Text + " (Level " + NUP_RedMin6.Text + ", Forme: " + NUP_RedForme6.Text + "), " + label92.Text + " - " + CB_Red7.Text + " (Level " + NUP_RedMin7.Text + ", Forme: " + NUP_RedForme7.Text + "), " + label91.Text + " - " + CB_Red8.Text + " (Level " + NUP_RedMin8.Text + ", Forme: " + NUP_RedForme8.Text + "), " + label90.Text + " - " + CB_Red9.Text + " (Level " + NUP_RedMin9.Text + ", Forme: " + NUP_RedForme9.Text + "), " + label89.Text + " - " + CB_Red10.Text + " (Level " + NUP_RedMin10.Text + ", Forme: " + NUP_RedForme10.Text + "), " + label88.Text + " - " + CB_Red11.Text + " (Level " + NUP_RedMin11.Text + ", Forme: " + NUP_RedForme11.Text + "), " + label87.Text + " - " + CB_Red12.Text + " (Level " + NUP_RedMin12.Text + ", Forme: " + NUP_RedForme12.Text + ")" + Environment.NewLine;
-
-                toret += "Old Rod: " + label43.Text + " - " + CB_Old1.Text + " (Level " + NUP_OldMin1.Text + ", Forme: " + NUP_OldForme1.Text + "), " + label44.Text + " - " + CB_Old2.Text + " (Level " + NUP_OldMin2.Text + ", Forme: " + NUP_OldForme2.Text + "), " + label45.Text + " - " + CB_Old3.Text + " (Level " + NUP_OldMin3.Text + ", Forme: " + NUP_OldForme3.Text + ")" + Environment.NewLine;
-
-                toret += "Good Rod: " + label29.Text + " - " + CB_Good1.Text + " (Level " + NUP_GoodMin1.Text + ", Forme: " + NUP_GoodForme1.Text + "), " + label28.Text + " - " + CB_Good2.Text + " (Level " + NUP_GoodMin2.Text + ", Forme: " + NUP_GoodForme2.Text + "), " + label27.Text + " - " + CB_Good3.Text + " (Level " + NUP_GoodMin3.Text + ", Forme: " + NUP_GoodForme3.Text + ")" + Environment.NewLine;
-
-                toret += "Super Rod: " + label99.Text + " - " + CB_Super1.Text + " (Level " + NUP_SuperMin1.Text + ", Forme: " + NUP_SuperForme1.Text + "), " + label98.Text + " - " + CB_Super2.Text + " (Level " + NUP_SuperMin2.Text + ", Forme: " + NUP_SuperForme2.Text + "), " + label49.Text + " - " + CB_Super3.Text + " (Level " + NUP_SuperMin3.Text + ", Forme: " + NUP_SuperForme3.Text + ")" + Environment.NewLine;
-
-                toret += "Surf: " + label120.Text + " - " + CB_Surf1.Text + " (Level " + NUP_SurfMin1.Text + ", Forme: " + NUP_SurfForme1.Text + "), " + label119.Text + " - " + CB_Surf2.Text + " (Level " + NUP_SurfMin2.Text + ", Forme: " + NUP_SurfForme2.Text + "), " + label118.Text + " - " + CB_Surf3.Text + " (Level " + NUP_SurfMin3.Text + ", Forme: " + NUP_SurfForme3.Text + "), " + label117.Text + " - " + CB_Surf4.Text + " (Level " + NUP_SurfMin4.Text + ", Forme: " + NUP_SurfForme4.Text + "), " + label116.Text + " - " + CB_Surf5.Text + " (Level " + NUP_SurfMin5.Text + ", Forme: " + NUP_SurfForme5.Text + ")" + Environment.NewLine;
-
-                toret += "Horde A (60%): " + CB_HordeA1.Text + " (Level " + NUP_HordeAMin1.Text + ", Forme: " + NUP_HordeAForme1.Text + "), " + CB_HordeA2.Text + " (Level " + NUP_HordeAMin2.Text + ", Forme: " + NUP_HordeAForme2.Text + "), " + CB_HordeA3.Text + " (Level " + NUP_HordeAMin3.Text + ", Forme: " + NUP_HordeAForme3.Text + "), " + CB_HordeA4.Text + " (Level " + NUP_HordeAMin4.Text + ", Forme: " + NUP_HordeAForme4.Text + "), " + CB_HordeA5.Text + " (Level " + NUP_HordeAMin5.Text + ", Forme: " + NUP_HordeAForme5.Text + ")" + Environment.NewLine;
-
-                toret += "Horde B (35%): " + CB_HordeB1.Text + " (Level " + NUP_HordeBMin1.Text + ", Forme: " + NUP_HordeBForme1.Text + "), " + CB_HordeB2.Text + " (Level " + NUP_HordeBMin2.Text + ", Forme: " + NUP_HordeBForme2.Text + "), " + CB_HordeB3.Text + " (Level " + NUP_HordeBMin3.Text + ", Forme: " + NUP_HordeBForme3.Text + "), " + CB_HordeB4.Text + " (Level " + NUP_HordeBMin4.Text + ", Forme: " + NUP_HordeBForme4.Text + "), " + CB_HordeB5.Text + " (Level " + NUP_HordeBMin5.Text + ", Forme: " + NUP_HordeBForme5.Text + ")" + Environment.NewLine;
-
-                toret += "Horde C (5%): " + CB_HordeC1.Text + " (Level " + NUP_HordeCMin1.Text + ", Forme: " + NUP_HordeCForme1.Text + "), " + CB_HordeC2.Text + " (Level " + NUP_HordeCMin2.Text + ", Forme: " + NUP_HordeCForme2.Text + "), " + CB_HordeC3.Text + " (Level " + NUP_HordeCMin3.Text + ", Forme: " + NUP_HordeCForme3.Text + "), " + CB_HordeC4.Text + " (Level " + NUP_HordeCMin4.Text + ", Forme: " + NUP_HordeCForme4.Text + "), " + CB_HordeC5.Text + " (Level " + NUP_HordeCMin5.Text + ", Forme: " + NUP_HordeCForme5.Text + ")" + Environment.NewLine + Environment.NewLine;
-
+                toret += $"Grass: {label31.Text} - {CB_Grass1.Text} (Level {NUP_GrassMin1.Text}, Forme: {NUP_GrassForme1.Text}), {label32.Text} - {CB_Grass2.Text} (Level {NUP_GrassMin2.Text}, Forme: {NUP_GrassForme2.Text}), {label33.Text} - {CB_Grass3.Text} (Level {NUP_GrassMin3.Text}, Forme: {NUP_GrassForme3.Text}), {label34.Text} - {CB_Grass4.Text} (Level {NUP_GrassMin4.Text}, Forme: {NUP_GrassForme4.Text}), {label35.Text} - {CB_Grass5.Text} (Level {NUP_GrassMin5.Text}, Forme: {NUP_GrassForme5.Text}), {label36.Text} - {CB_Grass6.Text} (Level {NUP_GrassMin6.Text}, Forme: {NUP_GrassForme6.Text}), {label37.Text} - {CB_Grass7.Text} (Level {NUP_GrassMin7.Text}, Forme: {NUP_GrassForme7.Text}), {label38.Text} - {CB_Grass8.Text} (Level {NUP_GrassMin8.Text}, Forme: {NUP_GrassForme8.Text}), {label39.Text} - {CB_Grass9.Text} (Level {NUP_GrassMin9.Text}, Forme: {NUP_GrassForme9.Text}), {label40.Text} - {CB_Grass10.Text} (Level {NUP_GrassMin10.Text}, Forme: {NUP_GrassForme10.Text}), {label42.Text} - {CB_Grass11.Text} (Level {NUP_GrassMin11.Text}, Forme: {NUP_GrassForme11.Text}), {label41.Text} - {CB_Grass12.Text} (Level {NUP_GrassMin12.Text}, Forme: {NUP_GrassForme12.Text}){Environment.NewLine}";
+                toret += $"Rough Terrain: {label10.Text} - {CB_RT1.Text} (Level {NUP_RTMin1.Text}, Forme: {NUP_RTForme1.Text}), {label21.Text} - {CB_RT2.Text} (Level {NUP_RTMin2.Text}, Forme: {NUP_RTForme2.Text}), {label20.Text} - {CB_RT3.Text} (Level {NUP_RTMin3.Text}, Forme: {NUP_RTForme3.Text}), {label19.Text} - {CB_RT4.Text} (Level {NUP_RTMin4.Text}, Forme: {NUP_RTForme4.Text}), {label18.Text} - {CB_RT5.Text} (Level {NUP_RTMin5.Text}, Forme: {NUP_RTForme5.Text}), {label17.Text} - {CB_RT6.Text} (Level {NUP_RTMin6.Text}, Forme: {NUP_RTForme6.Text}), {label16.Text} - {CB_RT7.Text} (Level {NUP_RTMin7.Text}, Forme: {NUP_RTForme7.Text}), {label15.Text} - {CB_RT8.Text} (Level {NUP_RTMin8.Text}, Forme: {NUP_RTForme8.Text}), {label14.Text} - {CB_RT9.Text} (Level {NUP_RTMin9.Text}, Forme: {NUP_RTForme9.Text}), {label13.Text} - {CB_RT10.Text} (Level {NUP_RTMin10.Text}, Forme: {NUP_RTForme10.Text}), {label12.Text} - {CB_RT11.Text} (Level {NUP_RTMin11.Text}, Forme: {NUP_RTForme11.Text}), {label11.Text} - {CB_RT12.Text} (Level {NUP_RTMin12.Text}, Forme: {NUP_RTForme12.Text}){Environment.NewLine}";
+                toret += $"Rock Smash: {label111.Text} - {CB_RockSmash1.Text} (Level {NUP_RockSmashMin1.Text}, Forme: {NUP_RockSmashForme1.Text}), {label110.Text} - {CB_RockSmash2.Text} (Level {NUP_RockSmashMin2.Text}, Forme: {NUP_RockSmashForme2.Text}), {label109.Text} - {CB_RockSmash3.Text} (Level {NUP_RockSmashMin3.Text}, Forme: {NUP_RockSmashForme3.Text}), {label108.Text} - {CB_RockSmash4.Text} (Level {NUP_RockSmashMin4.Text}, Forme: {NUP_RockSmashForme4.Text}), {label107.Text} - {CB_RockSmash5.Text} (Level {NUP_RockSmashMin5.Text}, Forme: {NUP_RockSmashForme5.Text}){Environment.NewLine}";
+                toret += $"Yellow Flowers: {label54.Text} - {CB_Yellow1.Text} (Level {NUP_YellowMin1.Text}, Forme: {NUP_YellowForme1.Text}), {label65.Text} - {CB_Yellow2.Text} (Level {NUP_YellowMin2.Text}, Forme: {NUP_YellowForme2.Text}), {label64.Text} - {CB_Yellow3.Text} (Level {NUP_YellowMin3.Text}, Forme: {NUP_YellowForme3.Text}), {label63.Text} - {CB_Yellow4.Text} (Level {NUP_YellowMin4.Text}, Forme: {NUP_YellowForme4.Text}), {label62.Text} - {CB_Yellow5.Text} (Level {NUP_YellowMin5.Text}, Forme: {NUP_YellowForme5.Text}), {label61.Text} - {CB_Yellow6.Text} (Level {NUP_YellowMin6.Text}, Forme: {NUP_YellowForme6.Text}), {label60.Text} - {CB_Yellow7.Text} (Level {NUP_YellowMin7.Text}, Forme: {NUP_YellowForme7.Text}), {label59.Text} - {CB_Yellow8.Text} (Level {NUP_YellowMin8.Text}, Forme: {NUP_YellowForme8.Text}), {label58.Text} - {CB_Yellow9.Text} (Level {NUP_YellowMin9.Text}, Forme: {NUP_YellowForme9.Text}), {label57.Text} - {CB_Yellow10.Text} (Level {NUP_YellowMin10.Text}, Forme: {NUP_YellowForme10.Text}), {label56.Text} - {CB_Yellow11.Text} (Level {NUP_YellowMin11.Text}, Forme: {NUP_YellowForme11.Text}), {label55.Text} - {CB_Yellow12.Text} (Level {NUP_YellowMin12.Text}, Forme: {NUP_YellowForme12.Text}){Environment.NewLine}";
+                toret += $"Purple Flowers: {label70.Text} - {CB_Purple1.Text} (Level {NUP_PurpleMin1.Text}, Forme: {NUP_PurpleForme1.Text}), {label81.Text} - {CB_Purple2.Text} (Level {NUP_PurpleMin2.Text}, Forme: {NUP_PurpleForme2.Text}), {label80.Text} - {CB_Purple3.Text} (Level {NUP_PurpleMin3.Text}, Forme: {NUP_PurpleForme3.Text}), {label79.Text} - {CB_Purple4.Text} (Level {NUP_PurpleMin4.Text}, Forme: {NUP_PurpleForme4.Text}), {label78.Text} - {CB_Purple5.Text} (Level {NUP_PurpleMin5.Text}, Forme: {NUP_PurpleForme5.Text}), {label77.Text} - {CB_Purple6.Text} (Level {NUP_PurpleMin6.Text}, Forme: {NUP_PurpleForme6.Text}), {label76.Text} - {CB_Purple7.Text} (Level {NUP_PurpleMin7.Text}, Forme: {NUP_PurpleForme7.Text}), {label75.Text} - {CB_Purple8.Text} (Level {NUP_PurpleMin8.Text}, Forme: {NUP_PurpleForme8.Text}), {label74.Text} - {CB_Purple9.Text} (Level {NUP_PurpleMin9.Text}, Forme: {NUP_PurpleForme9.Text}), {label73.Text} - {CB_Purple10.Text} (Level {NUP_PurpleMin10.Text}, Forme: {NUP_PurpleForme10.Text}), {label72.Text} - {CB_Purple11.Text} (Level {NUP_PurpleMin11.Text}, Forme: {NUP_PurpleForme11.Text}), {label71.Text} - {CB_Purple12.Text} (Level {NUP_PurpleMin12.Text}, Forme: {NUP_PurpleForme12.Text}){Environment.NewLine}";
+                toret += $"Red Flowers: {label86.Text} - {CB_Red1.Text} (Level {NUP_RedMin1.Text}, Forme: {NUP_RedForme1.Text}), {label97.Text} - {CB_Red2.Text} (Level {NUP_RedMin2.Text}, Forme: {NUP_RedForme2.Text}), {label96.Text} - {CB_Red3.Text} (Level {NUP_RedMin3.Text}, Forme: {NUP_RedForme3.Text}), {label95.Text} - {CB_Red4.Text} (Level {NUP_RedMin4.Text}, Forme: {NUP_RedForme4.Text}), {label94.Text} - {CB_Red5.Text} (Level {NUP_RedMin5.Text}, Forme: {NUP_RedForme5.Text}), {label93.Text} - {CB_Red6.Text} (Level {NUP_RedMin6.Text}, Forme: {NUP_RedForme6.Text}), {label92.Text} - {CB_Red7.Text} (Level {NUP_RedMin7.Text}, Forme: {NUP_RedForme7.Text}), {label91.Text} - {CB_Red8.Text} (Level {NUP_RedMin8.Text}, Forme: {NUP_RedForme8.Text}), {label90.Text} - {CB_Red9.Text} (Level {NUP_RedMin9.Text}, Forme: {NUP_RedForme9.Text}), {label89.Text} - {CB_Red10.Text} (Level {NUP_RedMin10.Text}, Forme: {NUP_RedForme10.Text}), {label88.Text} - {CB_Red11.Text} (Level {NUP_RedMin11.Text}, Forme: {NUP_RedForme11.Text}), {label87.Text} - {CB_Red12.Text} (Level {NUP_RedMin12.Text}, Forme: {NUP_RedForme12.Text}){Environment.NewLine}";
+                toret += $"Old Rod: {label43.Text} - {CB_Old1.Text} (Level {NUP_OldMin1.Text}, Forme: {NUP_OldForme1.Text}), {label44.Text} - {CB_Old2.Text} (Level {NUP_OldMin2.Text}, Forme: {NUP_OldForme2.Text}), {label45.Text} - {CB_Old3.Text} (Level {NUP_OldMin3.Text}, Forme: {NUP_OldForme3.Text}){Environment.NewLine}";
+                toret += $"Good Rod: {label29.Text} - {CB_Good1.Text} (Level {NUP_GoodMin1.Text}, Forme: {NUP_GoodForme1.Text}), {label28.Text} - {CB_Good2.Text} (Level {NUP_GoodMin2.Text}, Forme: {NUP_GoodForme2.Text}), {label27.Text} - {CB_Good3.Text} (Level {NUP_GoodMin3.Text}, Forme: {NUP_GoodForme3.Text}){Environment.NewLine}";
+                toret += $"Super Rod: {label99.Text} - {CB_Super1.Text} (Level {NUP_SuperMin1.Text}, Forme: {NUP_SuperForme1.Text}), {label98.Text} - {CB_Super2.Text} (Level {NUP_SuperMin2.Text}, Forme: {NUP_SuperForme2.Text}), {label49.Text} - {CB_Super3.Text} (Level {NUP_SuperMin3.Text}, Forme: {NUP_SuperForme3.Text}){Environment.NewLine}";
+                toret += $"Surf: {label120.Text} - {CB_Surf1.Text} (Level {NUP_SurfMin1.Text}, Forme: {NUP_SurfForme1.Text}), {label119.Text} - {CB_Surf2.Text} (Level {NUP_SurfMin2.Text}, Forme: {NUP_SurfForme2.Text}), {label118.Text} - {CB_Surf3.Text} (Level {NUP_SurfMin3.Text}, Forme: {NUP_SurfForme3.Text}), {label117.Text} - {CB_Surf4.Text} (Level {NUP_SurfMin4.Text}, Forme: {NUP_SurfForme4.Text}), {label116.Text} - {CB_Surf5.Text} (Level {NUP_SurfMin5.Text}, Forme: {NUP_SurfForme5.Text}){Environment.NewLine}";
+                toret += $"Horde A (60%): {CB_HordeA1.Text} (Level {NUP_HordeAMin1.Text}, Forme: {NUP_HordeAForme1.Text}), {CB_HordeA2.Text} (Level {NUP_HordeAMin2.Text}, Forme: {NUP_HordeAForme2.Text}), {CB_HordeA3.Text} (Level {NUP_HordeAMin3.Text}, Forme: {NUP_HordeAForme3.Text}), {CB_HordeA4.Text} (Level {NUP_HordeAMin4.Text}, Forme: {NUP_HordeAForme4.Text}), {CB_HordeA5.Text} (Level {NUP_HordeAMin5.Text}, Forme: {NUP_HordeAForme5.Text}){Environment.NewLine}";
+                toret += $"Horde B (35%): {CB_HordeB1.Text} (Level {NUP_HordeBMin1.Text}, Forme: {NUP_HordeBForme1.Text}), {CB_HordeB2.Text} (Level {NUP_HordeBMin2.Text}, Forme: {NUP_HordeBForme2.Text}), {CB_HordeB3.Text} (Level {NUP_HordeBMin3.Text}, Forme: {NUP_HordeBForme3.Text}), {CB_HordeB4.Text} (Level {NUP_HordeBMin4.Text}, Forme: {NUP_HordeBForme4.Text}), {CB_HordeB5.Text} (Level {NUP_HordeBMin5.Text}, Forme: {NUP_HordeBForme5.Text}){Environment.NewLine}";
+                toret += $"Horde C (5%): {CB_HordeC1.Text} (Level {NUP_HordeCMin1.Text}, Forme: {NUP_HordeCForme1.Text}), {CB_HordeC2.Text} (Level {NUP_HordeCMin2.Text}, Forme: {NUP_HordeCForme2.Text}), {CB_HordeC3.Text} (Level {NUP_HordeCMin3.Text}, Forme: {NUP_HordeCForme3.Text}), {CB_HordeC4.Text} (Level {NUP_HordeCMin4.Text}, Forme: {NUP_HordeCForme4.Text}), {CB_HordeC5.Text} (Level {NUP_HordeCMin5.Text}, Forme: {NUP_HordeCForme5.Text}){Environment.NewLine}{Environment.NewLine}";
                 toret = toret.Replace("--- (No Level)", "None");
             }
             else
@@ -628,11 +637,13 @@ namespace pk3DS
 
         private void modifyLevels(object sender, EventArgs e)
         {
+            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Modify all current Level ranges?", "Cannot undo.") != DialogResult.Yes) return;
+
             // Disable Interface while modifying
             Enabled = false;
 
             // Calculate % diff we will apply to each level
-            decimal leveldiff = (100 + NUD_LevelAmp.Value) / 100;
+            decimal leveldiff = NUD_LevelAmp.Value;
 
             // Cycle through each location to modify levels
             for (int i = 0; i < CB_LocationID.Items.Count; i++) // for every location
@@ -642,13 +653,15 @@ namespace pk3DS
 
                 // Amp Levels
                 for (int l = 0; l < max.Length; l++)
-                    min[l].Value = max[l].Value = max[l].Value <= 1 ? max[l].Value : Math.Max(1, Math.Min(100, (int)(leveldiff * max[l].Value)));
+                    if (min[l].Value > 1)
+                        min[l].Value = max[l].Value = Randomizer.getModifiedLevel((int)max[l].Value, leveldiff);
 
                 // Save Changes
                 B_Save_Click(sender, e);
             }
             // Enable Interface... modification complete.
             Enabled = true;
+            WinFormsUtil.Alert("Modified all Level ranges according to specification!", "Press the Dump Tables button to view the new Level ranges!");
         }
     }
 }

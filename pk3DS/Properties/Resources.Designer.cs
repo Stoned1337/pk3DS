@@ -2503,9 +2503,29 @@ namespace pk3DS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap _25_1c {
+            get {
+                object obj = ResourceManager.GetObject("_25_1c", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap _25_2 {
             get {
                 object obj = ResourceManager.GetObject("_25_2", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap _25_2c {
+            get {
+                object obj = ResourceManager.GetObject("_25_2c", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -2523,9 +2543,29 @@ namespace pk3DS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap _25_3c {
+            get {
+                object obj = ResourceManager.GetObject("_25_3c", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap _25_4 {
             get {
                 object obj = ResourceManager.GetObject("_25_4", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap _25_4c {
+            get {
+                object obj = ResourceManager.GetObject("_25_4c", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -2543,9 +2583,29 @@ namespace pk3DS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap _25_5c {
+            get {
+                object obj = ResourceManager.GetObject("_25_5c", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap _25_6 {
             get {
                 object obj = ResourceManager.GetObject("_25_6", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap _25_6c {
+            get {
+                object obj = ResourceManager.GetObject("_25_6c", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -4647,26 +4707,6 @@ namespace pk3DS.Properties {
             get {
                 object obj = ResourceManager.GetObject("_39b", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 0004000000030500	ASSJ	スーパーストリートファイターIV 3D EDITION
-        ///0004000000030B00	ADAJ	nintendogs + cats 柴 &amp; Newフレンズ
-        ///0004000000031000	ADBJ	nintendogs + cats フレンチ･ブル &amp; Newフレンズ
-        ///0004000000031500	ADCJ	nintendogs + cats トイ･プードル &amp; Newフレンズ
-        ///0004000000031E00	A66J	戦国無双 Chronicle
-        ///0004000000032A00	ABBJ	とびだす!パズルボブル 3D
-        ///0004000000032900	AEEJ	ウイニングイレブン 3DSoccer
-        ///0004000000031F00	AKKJ	レイトン教授と奇跡の仮面
-        ///0004000000034500	ARBJ	ラビッツ タイム・トラベル
-        ///0004000000032800	ARRJ	リッジレーサー3D
-        ///0004000000034400	ASCJ	Tom Clancy&apos;s スプリンターセル 3D
-        ///0004000000033300	A [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string _3dsgames {
-            get {
-                return ResourceManager.GetString("_3dsgames", resourceCulture);
             }
         }
         
@@ -11744,16 +11784,6 @@ namespace pk3DS.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] Distributed {
-            get {
-                object obj = ResourceManager.GetObject("Distributed", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap egg {
@@ -11784,16 +11814,6 @@ namespace pk3DS.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] ETC1Lib {
-            get {
-                object obj = ResourceManager.GetObject("ETC1Lib", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap F {
@@ -11820,26 +11840,6 @@ namespace pk3DS.Properties {
             get {
                 object obj = ResourceManager.GetObject("helditem", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] iQue {
-            get {
-                object obj = ResourceManager.GetObject("iQue", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] iQueForSystem {
-            get {
-                object obj = ResourceManager.GetObject("iQueForSystem", resourceCulture);
-                return ((byte[])(obj));
             }
         }
         
@@ -16034,16 +16034,6 @@ namespace pk3DS.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] Licensed {
-            get {
-                object obj = ResourceManager.GetObject("Licensed", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap moon {
@@ -16060,26 +16050,6 @@ namespace pk3DS.Properties {
             get {
                 object obj = ResourceManager.GetObject("N", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] Nintendo {
-            get {
-                object obj = ResourceManager.GetObject("Nintendo", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] ORAS {
-            get {
-                object obj = ResourceManager.GetObject("ORAS", resourceCulture);
-                return ((byte[])(obj));
             }
         }
         
@@ -16166,30 +16136,10 @@ namespace pk3DS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap unknown1 {
-            get {
-                object obj = ResourceManager.GetObject("unknown1", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
         internal static System.Drawing.Bitmap W {
             get {
                 object obj = ResourceManager.GetObject("W", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] XY {
-            get {
-                object obj = ResourceManager.GetObject("XY", resourceCulture);
-                return ((byte[])(obj));
             }
         }
     }

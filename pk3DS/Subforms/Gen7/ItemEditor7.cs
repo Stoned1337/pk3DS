@@ -2,6 +2,9 @@
 using System.IO;
 using System.Windows.Forms;
 
+using pk3DS.Core;
+using pk3DS.Core.Structures;
+
 namespace pk3DS
 {
     public partial class ItemEditor7 : Form
@@ -16,8 +19,8 @@ namespace pk3DS
         }
 
         private readonly byte[][] files;
-        private readonly string[] itemlist = Main.getText(TextName.ItemNames);
-        private readonly string[] itemflavor = Main.getText(TextName.ItemFlavor);
+        private readonly string[] itemlist = Main.Config.getText(TextName.ItemNames);
+        private readonly string[] itemflavor = Main.Config.getText(TextName.ItemFlavor);
 
         private void Setup()
         {
@@ -46,7 +49,7 @@ namespace pk3DS
         {
             if (entry < 1) return;
 
-            item.Price = (ushort)(Util.ToInt32(MT_Price)/10);
+            item.Price = (ushort)(WinFormsUtil.ToInt32(MT_Price)/10);
             item.UseEffect = (byte)(int)NUD_UseEffect.Value;
 
             files[entry] = item.Write();
@@ -58,7 +61,7 @@ namespace pk3DS
 
         private void changePrice(object sender, EventArgs e)
         {
-            MT_Sell.Text = (Math.Min(Util.ToUInt32(MT_Price) / 10, 0x7FFF) * 10 / 2).ToString();
+            MT_Sell.Text = (Math.Min(WinFormsUtil.ToUInt32(MT_Price) / 10, 0x7FFF) * 10 / 2).ToString();
         }
 
         private readonly byte[] ItemIconTableSignature =
@@ -71,9 +74,9 @@ namespace pk3DS
 
         private int getItemMapOffset()
         {
-            if (Main.ExeFSPath == null) { Util.Alert("No exeFS code to load."); return -1; }
+            if (Main.ExeFSPath == null) { WinFormsUtil.Alert("No exeFS code to load."); return -1; }
             string[] exefsFiles = Directory.GetFiles(Main.ExeFSPath);
-            if (!File.Exists(exefsFiles[0]) || !Path.GetFileNameWithoutExtension(exefsFiles[0]).Contains("code")) { Util.Alert("No .code.bin detected."); return -1; }
+            if (!File.Exists(exefsFiles[0]) || !Path.GetFileNameWithoutExtension(exefsFiles[0]).Contains("code")) { WinFormsUtil.Alert("No .code.bin detected."); return -1; }
             byte[] data = File.ReadAllBytes(exefsFiles[0]);
 
             byte[] reference = ItemIconTableSignature;

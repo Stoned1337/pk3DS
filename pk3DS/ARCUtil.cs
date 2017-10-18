@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace pk3DS
+namespace pk3DS.ARCUtil
 {
     public class ARC
     {
@@ -577,7 +577,7 @@ namespace pk3DS
                 //if (dr != DialogResult.Yes) 
                 return;
             }
-            Util.Alert("Not finished.");
+            WinFormsUtil.Alert("Not finished.");
         }
 
         // Generic Utility

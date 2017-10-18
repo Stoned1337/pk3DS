@@ -1,4 +1,6 @@
-﻿using System;
+﻿using pk3DS.Core;
+using pk3DS.Core.CTR;
+using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -54,9 +56,9 @@ namespace pk3DS
 
             string garcID = L_File.Text.Split(':')[1].Replace("\\", "").Replace(" ","");
             if (banlist.Contains(garcID))
-            { Util.Alert("GARC is prevented from being shuffled."); return; }
+            { WinFormsUtil.Alert("GARC is prevented from being shuffled."); return; }
 
-            var g = CTR.GARC.unpackGARC(garc);
+            var g = GARC.unpackGARC(garc);
             
             // Build a list of all the files we can relocate.
             int[] randFiles = new int[g.fatb.FileCount];
@@ -68,14 +70,14 @@ namespace pk3DS
             Array.Resize(ref randFiles, ctr);
 
             if (ctr == 0) 
-            { Util.Alert("No files to shuffle...?"); return; }
+            { WinFormsUtil.Alert("No files to shuffle...?"); return; }
             
             // Create backup
             string dest = "backup" + Path.DirectorySeparatorChar + $"PreShuffle {garcID}";
             if (!File.Exists(dest))
                 File.Copy(garc, dest);
             
-            var g2 = CTR.GARC.unpackGARC(garc);
+            var g2 = GARC.unpackGARC(garc);
             int[] newFileOffset = (int[])randFiles.Clone();
             Util.Shuffle(newFileOffset);
 
@@ -122,7 +124,7 @@ namespace pk3DS
             }
             #endregion
 
-            Util.Alert("GARC Shuffled!");
+            WinFormsUtil.Alert("GARC Shuffled!");
         }
     }
 }

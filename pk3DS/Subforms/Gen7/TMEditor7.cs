@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
 using System.Linq;
+using pk3DS.Core;
 
 namespace pk3DS
 {
@@ -11,11 +12,11 @@ namespace pk3DS
         public TMEditor7()
         {
             InitializeComponent();
-            if (Main.ExeFSPath == null) { Util.Alert("No exeFS code to load."); Close(); }
+            if (Main.ExeFSPath == null) { WinFormsUtil.Alert("No exeFS code to load."); Close(); }
             string[] files = Directory.GetFiles(Main.ExeFSPath);
-            if (!File.Exists(files[0]) || !Path.GetFileNameWithoutExtension(files[0]).Contains("code")) { Util.Alert("No .code.bin detected."); Close(); }
+            if (!File.Exists(files[0]) || !Path.GetFileNameWithoutExtension(files[0]).Contains("code")) { WinFormsUtil.Alert("No .code.bin detected."); Close(); }
             data = File.ReadAllBytes(files[0]);
-            if (data.Length % 0x200 != 0) { Util.Alert(".code.bin not decompressed. Aborting."); Close(); }
+            if (data.Length % 0x200 != 0) { WinFormsUtil.Alert(".code.bin not decompressed. Aborting."); Close(); }
             offset = Util.IndexOfBytes(data, Signature, 0x400000, 0) + Signature.Length;
             codebin = files[0];
             movelist[0] = "";
@@ -25,7 +26,7 @@ namespace pk3DS
 
         private static readonly byte[] Signature = {0x03, 0x40, 0x03, 0x41, 0x03, 0x42, 0x03, 0x43, 0x03}; // tail end of item::ITEM_CheckBeads
         private readonly string codebin;
-        private readonly string[] movelist = Main.getText(TextName.MoveNames);
+        private readonly string[] movelist = Main.Config.getText(TextName.MoveNames);
         private readonly int offset = 0x0059795A; // Default
         private readonly byte[] data;
         private int dataoffset;
@@ -87,6 +88,17 @@ namespace pk3DS
             // Set TM/HM list in
             for (int i = 0; i < 100; i++)
                 Array.Copy(BitConverter.GetBytes(tmlist[i]), 0, data, offset + 2 * i, 2);
+
+            // Set Move Text Descriptions back into Item Text File
+            string[] itemDescriptions = Main.Config.getText(TextName.ItemFlavor);
+            string[] moveDescriptions = Main.Config.getText(TextName.MoveFlavor);
+            for (int i = 1 - 1; i <= 92 - 1; i++) // TM01 - TM92
+                itemDescriptions[328 + i] = moveDescriptions[tmlist[i]];
+            for (int i = 93 - 1; i <= 95 - 1; i++) // TM92 - TM95
+                itemDescriptions[618 + i - 92] = moveDescriptions[tmlist[i]];
+            for (int i = 96 - 1; i <= 100 - 1; i++) // TM96 - TM100
+                itemDescriptions[690 + i - 95] = moveDescriptions[tmlist[i]];
+            Main.Config.setText(TextName.ItemFlavor, itemDescriptions);
         }
 
         private void formClosing(object sender, FormClosingEventArgs e)
@@ -97,10 +109,12 @@ namespace pk3DS
 
         private void B_RandomTM_Click(object sender, EventArgs e)
         {
+            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Randomize TMs?", "Move compatibility will be the same as the base TMs.") != DialogResult.Yes) return;
+
             int[] randomMoves = Enumerable.Range(1, movelist.Length - 1).Select(i => i).ToArray();
             Util.Shuffle(randomMoves);
 
-            int[] banned = { 15, 19, 57, 70, 127, 249, 291, 148 };
+            int[] banned = Legal.Z_Moves;
             int ctr = 0;
 
             for (int i = 0; i < dgvTM.Rows.Count; i++)
@@ -111,6 +125,7 @@ namespace pk3DS
 
                 dgvTM.Rows[i].Cells[1].Value = movelist[randomMoves[ctr++]];
             }
+            WinFormsUtil.Alert("Randomized!");
         }
 
         internal static void getTMHMList(ref ushort[] TMs)

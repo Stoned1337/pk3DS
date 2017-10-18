@@ -6,6 +6,9 @@ using System.Media;
 using System.Text;
 using System.Windows.Forms;
 using pk3DS.Properties;
+using pk3DS.Core;
+using pk3DS.Core.Randomizers;
+using pk3DS.Core.Structures;
 
 namespace pk3DS
 {
@@ -17,7 +20,7 @@ namespace pk3DS
             InitializeComponent();
 
             specieslist[0] = movelist[0] = itemlist[0] = "";
-            Array.Resize(ref specieslist, Main.Config.MaxSpeciesID);
+            Array.Resize(ref specieslist, Main.Config.MaxSpeciesID + 1);
 
             string[] evolutionMethods =
             { 
@@ -82,10 +85,10 @@ namespace pk3DS
         private readonly PictureBox[] pic;
         private int entry = -1;
         private readonly string[] sortedspecies;
-        private readonly string[] specieslist = Main.getText(TextName.SpeciesNames);
-        private readonly string[] movelist = Main.getText(TextName.MoveNames);
-        private readonly string[] itemlist = Main.getText(TextName.ItemNames);
-        private readonly string[] typelist = Main.getText(TextName.Types);
+        private readonly string[] specieslist = Main.Config.getText(TextName.SpeciesNames);
+        private readonly string[] movelist = Main.Config.getText(TextName.MoveNames);
+        private readonly string[] itemlist = Main.Config.getText(TextName.ItemNames);
+        private readonly string[] typelist = Main.Config.getText(TextName.Types);
         private bool dumping;
         private EvolutionSet evo = new EvolutionSet6(new byte[EvolutionSet6.SIZE]);
         private void getList()
@@ -123,64 +126,28 @@ namespace pk3DS
             getList();
         }
 
-        private static int[] sL; // Random Species List
         private void B_RandAll_Click(object sender, EventArgs e)
         {
-            if (DialogResult.Yes != Util.Prompt(MessageBoxButtons.YesNo, "Randomize all resulting species?", "Evolution methods and parameters will stay the same.")) return;
+            if (DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Randomize all resulting species?", "Evolution methods and parameters will stay the same."))
+                return;
 
-            // Set up advanced randomization options
-            bool rBST = CHK_BST.Checked;
-            bool rEXP = CHK_Exp.Checked;
-            bool rType = CHK_Type.Checked;
-            int ctr = 0;
-            sL = Randomizer.RandomSpeciesList;
-
-            for (int i = 0; i < CB_Species.Items.Count; i++)
-            {
-                CB_Species.SelectedIndex = i;
-                for (int j = 0; j < mb.Length; j++)
-                    if (mb[j].SelectedIndex > 0)
-                    {
-                        // Get a new random species
-                        int oldSpecies = rb[j].SelectedIndex;
-                        PersonalInfo oldpkm = Main.SpeciesStat[oldSpecies];
-                        int currentSpecies = Array.IndexOf(specieslist, CB_Species.Text);
-                        int loopctr = 0; // altering calculatiosn to prevent infinite loops
-                    defspecies:
-                        int newSpecies = Randomizer.getRandomSpecies(ref sL, ref ctr);
-                        PersonalInfo pkm = Main.SpeciesStat[newSpecies];
-                        loopctr++;
-
-                        // Verify it meets specifications
-                        if (newSpecies == currentSpecies && loopctr < Main.Config.MaxSpeciesID*10) // no A->A evolutions
-                        { goto defspecies; }
-                        if (rEXP) // Experience Growth Rate matches
-                        {
-                            if (oldpkm.EXPGrowth != pkm.EXPGrowth)
-                            { goto defspecies; }
-                        }
-                        if (rType) // Type has to be somewhat similar
-                        {
-                            if (!oldpkm.Types.Contains(pkm.Types[0]) || !oldpkm.Types.Contains(pkm.Types[1]))
-                            { goto defspecies; }
-                        }
-                        if (rBST) // Base stat total has to be close
-                        {
-                            const int l = 5; // tweakable scalars
-                            const int h = 6;
-                            if (!(pkm.BST * l / (h + loopctr/Main.Config.MaxSpeciesID) < oldpkm.BST && (pkm.BST * h + loopctr/Main.Config.MaxSpeciesID) / l > oldpkm.BST))
-                            { goto defspecies; }
-                        }
-                        // assign random val
-                        rb[j].SelectedIndex = newSpecies;
-                    }
-            }
             setList();
-            Util.Alert("All Pokemon's Evolutions have been randomized!");
+            // Set up advanced randomization options
+            var evos = files.Select(z => new EvolutionSet6(z)).ToArray();
+            var evoRand = new EvolutionRandomizer(Main.Config, evos);
+            evoRand.Randomizer.rBST = CHK_BST.Checked;
+            evoRand.Randomizer.rEXP = CHK_Exp.Checked;
+            evoRand.Randomizer.rType = CHK_Type.Checked;
+            evoRand.Randomizer.Initialize();
+            evoRand.Execute();
+            evos.Select(z => z.Write()).ToArray().CopyTo(files, 0);
+            getList();
+
+            WinFormsUtil.Alert("All Pokémon's Evolutions have been randomized!");
         }
         private void B_Dump_Click(object sender, EventArgs e)
         {
-            if (DialogResult.Yes != Util.Prompt(MessageBoxButtons.YesNo, "Dump all Evolutions to Text File?"))
+            if (DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Dump all Evolutions to Text File?"))
                 return;
 
             dumping = true;

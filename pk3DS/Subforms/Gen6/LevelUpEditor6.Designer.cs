@@ -34,6 +34,8 @@
             this.B_RandAll = new System.Windows.Forms.Button();
             this.B_Dump = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.CHK_NoFixedDamage = new System.Windows.Forms.CheckBox();
+            this.CHK_4MovesLvl1 = new System.Windows.Forms.CheckBox();
             this.L_Moves = new System.Windows.Forms.Label();
             this.NUD_Moves = new System.Windows.Forms.NumericUpDown();
             this.CHK_Expand = new System.Windows.Forms.CheckBox();
@@ -112,6 +114,8 @@
             // 
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox1.Controls.Add(this.CHK_NoFixedDamage);
+            this.groupBox1.Controls.Add(this.CHK_4MovesLvl1);
             this.groupBox1.Controls.Add(this.L_Moves);
             this.groupBox1.Controls.Add(this.NUD_Moves);
             this.groupBox1.Controls.Add(this.CHK_Expand);
@@ -129,6 +133,28 @@
             this.groupBox1.TabIndex = 6;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
+            // 
+            // CHK_NoFixedDamage
+            // 
+            this.CHK_NoFixedDamage.AutoSize = true;
+            this.CHK_NoFixedDamage.Checked = true;
+            this.CHK_NoFixedDamage.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.CHK_NoFixedDamage.Location = new System.Drawing.Point(5, 271);
+            this.CHK_NoFixedDamage.Name = "CHK_NoFixedDamage";
+            this.CHK_NoFixedDamage.Size = new System.Drawing.Size(68, 43);
+            this.CHK_NoFixedDamage.TabIndex = 14;
+            this.CHK_NoFixedDamage.Text = "No Fixed\nDamage\nMoves\n(Dragon Rage\n+ Sonic Boom)";
+            this.CHK_NoFixedDamage.UseVisualStyleBackColor = true;
+            // 
+            // CHK_4MovesLvl1
+            // 
+            this.CHK_4MovesLvl1.AutoSize = true;
+            this.CHK_4MovesLvl1.Location = new System.Drawing.Point(5, 159);
+            this.CHK_4MovesLvl1.Name = "CHK_4MovesLvl1";
+            this.CHK_4MovesLvl1.Size = new System.Drawing.Size(70, 30);
+            this.CHK_4MovesLvl1.TabIndex = 11;
+            this.CHK_4MovesLvl1.Text = "Start with\n4 Moves";
+            this.CHK_4MovesLvl1.UseVisualStyleBackColor = true;
             // 
             // L_Moves
             // 
@@ -272,7 +298,7 @@
             this.PB_MonSprite.TabIndex = 90;
             this.PB_MonSprite.TabStop = false;
             // 
-            // LevelUp
+            // LevelUpEditor6
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -322,5 +348,7 @@
         private System.Windows.Forms.NumericUpDown NUD_Moves;
         private System.Windows.Forms.CheckBox CHK_Expand;
         private System.Windows.Forms.PictureBox PB_MonSprite;
+        private System.Windows.Forms.CheckBox CHK_4MovesLvl1;
+        private System.Windows.Forms.CheckBox CHK_NoFixedDamage;
     }
 }

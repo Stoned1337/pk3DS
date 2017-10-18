@@ -1,7 +1,11 @@
-﻿using System;
+﻿using pk3DS.Core;
+using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+
+using pk3DS.Core.Randomizers;
+using pk3DS.Core.Structures;
 
 namespace pk3DS
 {
@@ -10,10 +14,10 @@ namespace pk3DS
         public StaticEncounterEditor6()
         {
             specieslist[0] = "---";
-            Array.Resize(ref specieslist, Main.Config.MaxSpeciesID);
+            Array.Resize(ref specieslist, Main.Config.MaxSpeciesID + 1);
             if (!File.Exists(FieldPath))
             {
-                Util.Error("CRO does not exist! Closing.", FieldPath);
+                WinFormsUtil.Error("CRO does not exist! Closing.", FieldPath);
                 Close();
             }
             InitializeComponent();
@@ -35,8 +39,8 @@ namespace pk3DS
         private const int fieldSize = 0xC;
         private readonly int count = Main.Config.ORAS ? 0x3B : 0xC;
         private EncounterStatic6[] EncounterData;
-        private readonly string[] itemlist = Main.getText(TextName.ItemNames);
-        private readonly string[] specieslist = Main.getText(TextName.SpeciesNames);
+        private readonly string[] itemlist = Main.Config.getText(TextName.ItemNames);
+        private readonly string[] specieslist = Main.Config.getText(TextName.SpeciesNames);
         private void B_Save_Click(object sender, EventArgs e)
         {
             saveEntry();
@@ -116,39 +120,39 @@ namespace pk3DS
 
         private void B_RandAll_Click(object sender, EventArgs e)
         {
-            DialogResult ync = Util.Prompt(MessageBoxButtons.YesNoCancel,
-                "Randomize by BST: Yes" + Environment.NewLine + 
-                "Randomize Randomly: No" + Environment.NewLine +
-                "Abort: Cancel");
-            if (ync != DialogResult.Yes && ync != DialogResult.No)
-                return;
-            if (ync == DialogResult.No)
-            {
-                for (int i = 0; i < LB_Encounters.Items.Count; i++)
-                {
-                    LB_Encounters.SelectedIndex = i;
-                    int species = Util.rand.Next(1, 721);
-                    CB_Species.SelectedIndex = species;
-                }
-                return;
-            }
+            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Randomize all? Cannot undo.", "Double check Randomization settings in the Randomizer Options tab.") != DialogResult.Yes) return;
 
-            // Randomize by BST
-            int[] sL = Randomizer.getSpeciesList(G1: true, G2: true, G3: true, G4: true, G5: true, G6: true, G7:false, L: false, E: false, Shedinja: false);
-            int ctr = 0;
+            var formrand = new FormRandomizer(Main.Config) { AllowMega = false, AllowAlolanForm = false };
+            var specrand = new SpeciesRandomizer(Main.Config)
+            {
+                G1 = CHK_G1.Checked,
+                G2 = CHK_G2.Checked,
+                G3 = CHK_G3.Checked,
+                G4 = CHK_G4.Checked,
+                G5 = CHK_G5.Checked,
+                G6 = CHK_G6.Checked,
+                G7 = false,
+
+                E = CHK_E.Checked,
+                L = CHK_L.Checked,
+
+                rBST = CHK_BST.Checked,
+            };
+            specrand.Initialize();
             for (int i = 0; i < LB_Encounters.Items.Count; i++)
             {
                 LB_Encounters.SelectedIndex = i;
+
                 int species = CB_Species.SelectedIndex;
-
-                int bst = Main.SpeciesStat[species].BST;
-                int tries = 0;
-                var pkm = Main.SpeciesStat[species = Randomizer.getRandomSpecies(ref sL, ref ctr)];
-                while (!((pkm.BST*(5 - ++tries/Main.Config.MaxSpeciesID)/6 < bst) && pkm.BST*(6 + ++tries/Main.Config.MaxSpeciesID)/5 > bst))
-                    pkm = Main.SpeciesStat[species = Randomizer.getRandomSpecies(ref sL, ref ctr)];
-
+                species = specrand.GetRandomSpecies(species);
                 CB_Species.SelectedIndex = species;
+                NUD_Form.Value = formrand.GetRandomForme(species);
+                NUD_Gender.Value = 0; // random
+
+                if (CHK_Level.Checked)
+                    NUD_Level.Value = Randomizer.getModifiedLevel((int)NUD_Level.Value, NUD_LevelBoost.Value);
             }
+            WinFormsUtil.Alert("Randomized all Static Encounters according to specification!");
         }
 
         private void changeSpecies(object sender, EventArgs e)

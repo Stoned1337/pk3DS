@@ -1,4 +1,5 @@
-﻿using System;
+﻿using pk3DS.Core;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -741,6 +742,10 @@ namespace pk3DS
         public Script(byte[] data = null)
         {
             Raw = data ?? new byte[0];
+
+            // sub_51AAFC
+            if ((Raw[8] & 1) != 0)
+                throw new ArgumentException("Multi-environment script!?");
         }
         public byte[] Write()
         {

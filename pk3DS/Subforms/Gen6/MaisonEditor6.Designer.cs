@@ -102,7 +102,7 @@
             this.L_Pokemon.Name = "L_Pokemon";
             this.L_Pokemon.Size = new System.Drawing.Size(55, 13);
             this.L_Pokemon.TabIndex = 3;
-            this.L_Pokemon.Text = "Pokemon:";
+            this.L_Pokemon.Text = "Pokémon:";
             // 
             // GB_Trainer
             // 
@@ -193,7 +193,7 @@
             this.GB_Pokemon.Size = new System.Drawing.Size(275, 187);
             this.GB_Pokemon.TabIndex = 5;
             this.GB_Pokemon.TabStop = false;
-            this.GB_Pokemon.Text = "Pokemon Summary";
+            this.GB_Pokemon.Text = "Pokémon Summary";
             // 
             // PB_PKM
             // 
@@ -238,9 +238,9 @@
             this.CHK_DEF.AutoSize = true;
             this.CHK_DEF.Location = new System.Drawing.Point(172, 157);
             this.CHK_DEF.Name = "CHK_DEF";
-            this.CHK_DEF.Size = new System.Drawing.Size(47, 17);
+            this.CHK_DEF.Size = new System.Drawing.Size(43, 17);
             this.CHK_DEF.TabIndex = 21;
-            this.CHK_DEF.Text = "DEF";
+            this.CHK_DEF.Text = "Def";
             this.CHK_DEF.UseVisualStyleBackColor = true;
             // 
             // CHK_ATK
@@ -248,9 +248,9 @@
             this.CHK_ATK.AutoSize = true;
             this.CHK_ATK.Location = new System.Drawing.Point(172, 143);
             this.CHK_ATK.Name = "CHK_ATK";
-            this.CHK_ATK.Size = new System.Drawing.Size(47, 17);
+            this.CHK_ATK.Size = new System.Drawing.Size(42, 17);
             this.CHK_ATK.TabIndex = 20;
-            this.CHK_ATK.Text = "ATK";
+            this.CHK_ATK.Text = "Atk";
             this.CHK_ATK.UseVisualStyleBackColor = true;
             // 
             // CHK_HP
@@ -376,7 +376,7 @@
             this.B_DumpPKs.Name = "B_DumpPKs";
             this.B_DumpPKs.Size = new System.Drawing.Size(75, 23);
             this.B_DumpPKs.TabIndex = 6;
-            this.B_DumpPKs.Text = "Dump PKs";
+            this.B_DumpPKs.Text = "Dump PKMs";
             this.B_DumpPKs.UseVisualStyleBackColor = true;
             this.B_DumpPKs.Click += new System.EventHandler(this.B_DumpPKs_Click);
             // 
@@ -390,11 +390,11 @@
             this.DumpTRs.UseVisualStyleBackColor = true;
             this.DumpTRs.Click += new System.EventHandler(this.DumpTRs_Click);
             // 
-            // Maison
+            // MaisonEditor6
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(579, 227);
+            this.ClientSize = new System.Drawing.Size(579, 226);
             this.Controls.Add(this.DumpTRs);
             this.Controls.Add(this.B_DumpPKs);
             this.Controls.Add(this.GB_Pokemon);
@@ -406,7 +406,7 @@
             this.MaximizeBox = false;
             this.MaximumSize = new System.Drawing.Size(595, 265);
             this.MinimumSize = new System.Drawing.Size(595, 265);
-            this.Name = "Maison";
+            this.Name = "MaisonEditor6";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Maison Editor";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.formClosing);

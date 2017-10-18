@@ -7,6 +7,9 @@ using System.Media;
 using System.Text;
 using System.Windows.Forms;
 using pk3DS.Properties;
+using pk3DS.Core.Structures;
+using pk3DS.Core;
+using pk3DS.Core.Randomizers;
 
 namespace pk3DS
 {
@@ -16,31 +19,45 @@ namespace pk3DS
         {
             InitializeComponent();
             files = infiles;
-            string[] species = Main.getText(TextName.SpeciesNames);
+            string[] species = Main.Config.getText(TextName.SpeciesNames);
             string[][] AltForms = Main.Config.Personal.getFormList(species, Main.Config.MaxSpeciesID);
             string[] specieslist = Main.Config.Personal.getPersonalEntryList(AltForms, species, Main.Config.MaxSpeciesID, out baseForms, out formVal);
             specieslist[0] = movelist[0] = "";
             
             setupDGV();
+            entries = infiles.Select(z => new EggMoves7(z)).ToArray();
+            string[] names = new string[entries.Length];
 
-            var newlist = new List<Util.cbItem>();
             for (int i = 0; i < species.Length; i++) // add all species & forms
-                newlist.Add(new Util.cbItem { Text = species[i] + $" ({i})", Value = i });
-            newlist = newlist.OrderBy(item => item.Text).ToList();
-            for (int i = species.Length; i < files.Length; i++)
-                newlist.Add(new Util.cbItem { Text = $"{i.ToString("0000")} - Extra", Value = i });
+            {
+                names[i] = species[i];
+                int formoff = entries[i].FormTableIndex;
+                int count = Main.Config.Personal[i].FormeCount;
+                for (int j = 1; j < count; j++)
+                {
+                    if (names[formoff + j - 1] == null)
+                        names[formoff + j - 1] = $"{species[i]} [{AltForms[i][j].Replace(species[i] + " ", "")}]";
+                }
+            }
+
+            var newlist = names.Select((z, i) => new WinFormsUtil.cbItem{Text = (names[i] ?? "Extra") + $" ({i})", Value = i});
+            newlist = newlist.GroupBy(z => z.Text.StartsWith("Extra"))
+                .Select(z => z.OrderBy(item => item.Text))
+                .SelectMany(z => z).ToList();
             NUD_FormTable.Maximum = files.Length;
 
             CB_Species.DisplayMember = "Text";
             CB_Species.ValueMember = "Value";
             CB_Species.DataSource = newlist;
 
-
             CB_Species.SelectedIndex = 0;
         }
+
+        private readonly EggMoves7[] entries;
+
         private readonly byte[][] files;
         private int entry = -1;
-        private readonly string[] movelist = Main.getText(TextName.MoveNames);
+        private readonly string[] movelist = Main.Config.getText(TextName.MoveNames);
         private bool dumping;
         private readonly int[] baseForms, formVal;
         private void setupDGV()
@@ -63,7 +80,7 @@ namespace pk3DS
         private EggMoves pkm = new EggMoves7(new byte[0]);
         private void getList()
         {
-            entry = Util.getIndex(CB_Species);
+            entry = WinFormsUtil.getIndex(CB_Species);
             int s = 0, f = 0;
             if (entry <= Main.Config.MaxSpeciesID)
             {
@@ -74,8 +91,7 @@ namespace pk3DS
             PB_MonSprite.Image = (Bitmap)Resources.ResourceManager.GetObject(filename);
 
             dgv.Rows.Clear();
-            byte[] input = files[entry];
-            pkm = new EggMoves7(input);
+            pkm = entries[entry];
             NUD_FormTable.Value = pkm.FormTableIndex;
             if (pkm.Count < 1) { files[entry] = new byte[0]; return; }
             dgv.Rows.Add(pkm.Count);
@@ -96,8 +112,9 @@ namespace pk3DS
                 if (move > 0 && !moves.Contains((ushort)move)) moves.Add(move);
             }
             pkm.Moves = moves.ToArray();
+            pkm.FormTableIndex = (int)NUD_FormTable.Value;
 
-            files[entry] = pkm.Write();
+            entries[entry] = (EggMoves7)pkm;
         }
 
         private void changeEntry(object sender, EventArgs e)
@@ -108,51 +125,23 @@ namespace pk3DS
 
         private void B_RandAll_Click(object sender, EventArgs e)
         {
-            /*
-             * 3111 Egg Moves Learned by 290 Species (10.73 avg)
-             * 18 is the most
-             * 1000 moves learned were STAB (32.1%)
-             */
-            Random rnd = new Random();
-
-            int[] banned = new[] { 165, 621, 464 }.Concat(Legal.Z_Moves).ToArray(); // Struggle, Hyperspace Fury, Dark Void
-
-            // Move Stats
-            Move[] moveTypes = Main.Config.Moves;
-            
-            // Set up Randomized Moves
-            int[] randomMoves = Enumerable.Range(1, movelist.Length - 1).Select(i => i).ToArray();
-            Util.Shuffle(randomMoves);
-            int ctr = 0;
-
-            for (int i = 0; i < CB_Species.Items.Count; i++)
+            var sets = entries;
+            var rand = new EggMoveRandomizer(Main.Config, sets)
             {
-                CB_Species.SelectedIndex = i; // Get new Species
-                int count = dgv.Rows.Count - 1;
-                int species = Util.getIndex(CB_Species);
-                if (CHK_Expand.Checked && (int)NUD_Moves.Value > count)
-                    dgv.Rows.AddCopies(count, (int)NUD_Moves.Value - count);
-                
-                for (int j = 1; j < dgv.Rows.Count - 1; j++)
-                {
-                    // Assign New Moves
-                    bool forceSTAB = CHK_STAB.Checked && rnd.Next(0, 99) < NUD_STAB.Value;
-                    int move = Randomizer.getRandomSpecies(ref randomMoves, ref ctr);
-
-                    while (banned.Contains(move) /* Invalid */
-                        || (forceSTAB && !Main.SpeciesStat[species].Types.Contains(moveTypes[move].Type))) // STAB is required
-                        move = Randomizer.getRandomSpecies(ref randomMoves, ref ctr);
-
-                    // Assign Move
-                    dgv.Rows[j].Cells[0].Value = movelist[move];
-                }
-            }
-            CB_Species.SelectedIndex = 0;
-            Util.Alert("All Pokemon's Egg Up Moves have been randomized!");
+                Expand = CHK_Expand.Checked,
+                ExpandTo = (int)NUD_Moves.Value,
+                STAB = CHK_STAB.Checked,
+                rSTABPercent = NUD_STAB.Value,
+                BannedMoves = new[] { 165, 621, 464 }.Concat(Legal.Z_Moves).ToArray(), // Struggle, Hyperspace Fury, Dark Void
+            };
+            rand.Execute();
+            // sets.Select(z => z.Write()).ToArray().CopyTo(files, 0);
+            getList();
+            WinFormsUtil.Alert("All Pokémon's Egg Moves have been randomized!");
         }
         private void B_Dump_Click(object sender, EventArgs e)
         {
-            if (DialogResult.Yes != Util.Prompt(MessageBoxButtons.YesNo, "Dump all Egg Moves to Text File?"))
+            if (DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Dump all Egg Moves to Text File?"))
                 return;
 
             dumping = true;
@@ -180,6 +169,7 @@ namespace pk3DS
         private void formClosing(object sender, FormClosingEventArgs e)
         {
             setList();
+            entries.Select(z => z.Write()).ToArray().CopyTo(files, 0);
         }
 
         private void B_Goto_Click(object sender, EventArgs e)
@@ -209,7 +199,7 @@ namespace pk3DS
                         stab++;
                 }
             }
-            Util.Alert($"Egg Moves: {movectr}\r\nMost Moves: {max} @ {spec}\r\nSTAB Count: {stab}");
+            WinFormsUtil.Alert($"Egg Moves: {movectr}\r\nMost Moves: {max} @ {spec}\r\nSTAB Count: {stab}");
         }
     }
 }

@@ -73,12 +73,15 @@
             this.B_EggMove = new System.Windows.Forms.Button();
             this.B_Trainer = new System.Windows.Forms.Button();
             this.B_Maison = new System.Windows.Forms.Button();
+            this.B_Royal = new System.Windows.Forms.Button();
             this.B_Item = new System.Windows.Forms.Button();
             this.B_Move = new System.Windows.Forms.Button();
             this.B_TitleScreen = new System.Windows.Forms.Button();
             this.B_OWSE = new System.Windows.Forms.Button();
             this.Tab_ExeFS = new System.Windows.Forms.TabPage();
             this.FLP_ExeFS = new System.Windows.Forms.FlowLayoutPanel();
+            this.B_TM = new System.Windows.Forms.Button();
+            this.B_ShinyRate = new System.Windows.Forms.Button();
             this.Tab_CRO = new System.Windows.Forms.TabPage();
             this.FLP_CRO = new System.Windows.Forms.FlowLayoutPanel();
             this.B_TypeChart = new System.Windows.Forms.Button();
@@ -129,7 +132,7 @@
             // 
             // B_OPower
             // 
-            this.B_OPower.Location = new System.Drawing.Point(109, 32);
+            this.B_OPower.Location = new System.Drawing.Point(215, 32);
             this.B_OPower.Name = "B_OPower";
             this.B_OPower.Size = new System.Drawing.Size(100, 23);
             this.B_OPower.TabIndex = 4;
@@ -139,7 +142,7 @@
             // 
             // B_Pickup
             // 
-            this.B_Pickup.Location = new System.Drawing.Point(3, 32);
+            this.B_Pickup.Location = new System.Drawing.Point(109, 32);
             this.B_Pickup.Name = "B_Pickup";
             this.B_Pickup.Size = new System.Drawing.Size(100, 23);
             this.B_Pickup.TabIndex = 0;
@@ -149,11 +152,11 @@
             // 
             // B_Mart
             // 
-            this.B_Mart.Location = new System.Drawing.Point(215, 3);
+            this.B_Mart.Location = new System.Drawing.Point(3, 32);
             this.B_Mart.Name = "B_Mart";
             this.B_Mart.Size = new System.Drawing.Size(100, 23);
             this.B_Mart.TabIndex = 2;
-            this.B_Mart.Text = "Mart";
+            this.B_Mart.Text = "Poké Mart";
             this.B_Mart.UseVisualStyleBackColor = true;
             this.B_Mart.Click += new System.EventHandler(this.B_Mart_Click);
             // 
@@ -163,7 +166,7 @@
             this.B_MoveTutor.Name = "B_MoveTutor";
             this.B_MoveTutor.Size = new System.Drawing.Size(100, 23);
             this.B_MoveTutor.TabIndex = 3;
-            this.B_MoveTutor.Text = "Move Tutor";
+            this.B_MoveTutor.Text = "Move Tutors";
             this.B_MoveTutor.UseVisualStyleBackColor = true;
             this.B_MoveTutor.Click += new System.EventHandler(this.B_MoveTutor_Click);
             // 
@@ -173,7 +176,7 @@
             this.B_TMHM.Name = "B_TMHM";
             this.B_TMHM.Size = new System.Drawing.Size(100, 23);
             this.B_TMHM.TabIndex = 1;
-            this.B_TMHM.Text = "TM/HM";
+            this.B_TMHM.Text = "TMs/HMs";
             this.B_TMHM.UseVisualStyleBackColor = true;
             this.B_TMHM.Click += new System.EventHandler(this.B_TMHM_Click);
             // 
@@ -235,7 +238,7 @@
             this.Menu_Rebuild,
             this.Menu_SMDH});
             this.Menu_Tools.Name = "Menu_Tools";
-            this.Menu_Tools.Size = new System.Drawing.Size(48, 20);
+            this.Menu_Tools.Size = new System.Drawing.Size(47, 20);
             this.Menu_Tools.Text = "Tools";
             // 
             // Menu_Restore
@@ -436,6 +439,7 @@
             this.FLP_RomFS.Controls.Add(this.B_EggMove);
             this.FLP_RomFS.Controls.Add(this.B_Trainer);
             this.FLP_RomFS.Controls.Add(this.B_Maison);
+            this.FLP_RomFS.Controls.Add(this.B_Royal);
             this.FLP_RomFS.Controls.Add(this.B_Item);
             this.FLP_RomFS.Controls.Add(this.B_Move);
             this.FLP_RomFS.Controls.Add(this.B_TitleScreen);
@@ -532,7 +536,7 @@
             this.B_Trainer.Name = "B_Trainer";
             this.B_Trainer.Size = new System.Drawing.Size(100, 23);
             this.B_Trainer.TabIndex = 2;
-            this.B_Trainer.Text = "Trainer";
+            this.B_Trainer.Text = "Trainers";
             this.B_Trainer.UseVisualStyleBackColor = true;
             this.B_Trainer.Click += new System.EventHandler(this.B_Trainer_Click);
             // 
@@ -542,13 +546,23 @@
             this.B_Maison.Name = "B_Maison";
             this.B_Maison.Size = new System.Drawing.Size(100, 23);
             this.B_Maison.TabIndex = 5;
-            this.B_Maison.Text = "Maison";
+            this.B_Maison.Text = "Battle Maison";
             this.B_Maison.UseVisualStyleBackColor = true;
             this.B_Maison.Click += new System.EventHandler(this.B_Maison_Click);
             // 
+            // B_Royal
+            // 
+            this.B_Royal.Location = new System.Drawing.Point(109, 90);
+            this.B_Royal.Name = "B_Royal";
+            this.B_Royal.Size = new System.Drawing.Size(100, 23);
+            this.B_Royal.TabIndex = 14;
+            this.B_Royal.Text = "Battle Royal/Tree";
+            this.B_Royal.UseVisualStyleBackColor = true;
+            this.B_Royal.Click += new System.EventHandler(this.B_Maison_Click);
+            // 
             // B_Item
             // 
-            this.B_Item.Location = new System.Drawing.Point(109, 90);
+            this.B_Item.Location = new System.Drawing.Point(215, 90);
             this.B_Item.Name = "B_Item";
             this.B_Item.Size = new System.Drawing.Size(100, 23);
             this.B_Item.TabIndex = 8;
@@ -558,7 +572,7 @@
             // 
             // B_Move
             // 
-            this.B_Move.Location = new System.Drawing.Point(215, 90);
+            this.B_Move.Location = new System.Drawing.Point(3, 119);
             this.B_Move.Name = "B_Move";
             this.B_Move.Size = new System.Drawing.Size(100, 23);
             this.B_Move.TabIndex = 11;
@@ -568,7 +582,7 @@
             // 
             // B_TitleScreen
             // 
-            this.B_TitleScreen.Location = new System.Drawing.Point(3, 119);
+            this.B_TitleScreen.Location = new System.Drawing.Point(109, 119);
             this.B_TitleScreen.Name = "B_TitleScreen";
             this.B_TitleScreen.Size = new System.Drawing.Size(100, 23);
             this.B_TitleScreen.TabIndex = 12;
@@ -578,7 +592,7 @@
             // 
             // B_OWSE
             // 
-            this.B_OWSE.Location = new System.Drawing.Point(109, 119);
+            this.B_OWSE.Location = new System.Drawing.Point(215, 119);
             this.B_OWSE.Name = "B_OWSE";
             this.B_OWSE.Size = new System.Drawing.Size(100, 23);
             this.B_OWSE.TabIndex = 13;
@@ -602,14 +616,36 @@
             this.FLP_ExeFS.AutoScroll = true;
             this.FLP_ExeFS.Controls.Add(this.B_MoveTutor);
             this.FLP_ExeFS.Controls.Add(this.B_TMHM);
+            this.FLP_ExeFS.Controls.Add(this.B_TM);
             this.FLP_ExeFS.Controls.Add(this.B_Mart);
             this.FLP_ExeFS.Controls.Add(this.B_Pickup);
             this.FLP_ExeFS.Controls.Add(this.B_OPower);
+            this.FLP_ExeFS.Controls.Add(this.B_ShinyRate);
             this.FLP_ExeFS.Dock = System.Windows.Forms.DockStyle.Fill;
             this.FLP_ExeFS.Location = new System.Drawing.Point(3, 3);
             this.FLP_ExeFS.Name = "FLP_ExeFS";
             this.FLP_ExeFS.Size = new System.Drawing.Size(346, 148);
             this.FLP_ExeFS.TabIndex = 11;
+            // 
+            // B_TM
+            // 
+            this.B_TM.Location = new System.Drawing.Point(215, 3);
+            this.B_TM.Name = "B_TM";
+            this.B_TM.Size = new System.Drawing.Size(100, 23);
+            this.B_TM.TabIndex = 6;
+            this.B_TM.Text = "TMs";
+            this.B_TM.UseVisualStyleBackColor = true;
+            this.B_TM.Click += new System.EventHandler(this.B_TMHM_Click);
+            // 
+            // B_ShinyRate
+            // 
+            this.B_ShinyRate.Location = new System.Drawing.Point(3, 61);
+            this.B_ShinyRate.Name = "B_ShinyRate";
+            this.B_ShinyRate.Size = new System.Drawing.Size(100, 23);
+            this.B_ShinyRate.TabIndex = 5;
+            this.B_ShinyRate.Text = "Shiny Rate";
+            this.B_ShinyRate.UseVisualStyleBackColor = true;
+            this.B_ShinyRate.Click += new System.EventHandler(this.B_ShinyRate_Click);
             // 
             // Tab_CRO
             // 
@@ -785,5 +821,8 @@
         private System.Windows.Forms.FlowLayoutPanel FLP_RomFS;
         private System.Windows.Forms.Label L_Status;
         private System.Windows.Forms.Button B_OWSE;
+        private System.Windows.Forms.Button B_ShinyRate;
+        private System.Windows.Forms.Button B_Royal;
+        private System.Windows.Forms.Button B_TM;
     }
 }

@@ -1,6 +1,8 @@
-﻿using System;
+﻿using pk3DS.Core;
+using System;
 using System.IO;
 using System.Windows.Forms;
+using pk3DS.Core.Randomizers;
 
 namespace pk3DS
 {
@@ -9,16 +11,16 @@ namespace pk3DS
         public StarterEditor6()
         {
             specieslist[0] = "---";
-            Array.Resize(ref specieslist, Main.Config.MaxSpeciesID);
+            Array.Resize(ref specieslist, Main.Config.MaxSpeciesID + 1);
             
             if (!File.Exists(CROPath))
             {
-                Util.Error("CRO does not exist! Closing.", CROPath);
+                WinFormsUtil.Error("CRO does not exist! Closing.", CROPath);
                 Close();
             }
             if (!File.Exists(FieldPath))
             {
-                Util.Error("CRO does not exist! Closing.", FieldPath);
+                WinFormsUtil.Error("CRO does not exist! Closing.", FieldPath);
                 Close();
             }
             InitializeComponent();
@@ -46,7 +48,7 @@ namespace pk3DS
         }
         private readonly string CROPath = Path.Combine(Main.RomFSPath, "DllPoke3Select.cro");
         private readonly string FieldPath = Path.Combine(Main.RomFSPath, "DllField.cro");
-        private readonly string[] specieslist = Main.getText(TextName.SpeciesNames);
+        private readonly string[] specieslist = Main.Config.getText(TextName.SpeciesNames);
         private readonly ComboBox[][] Choices;
         private readonly PictureBox[][] Previews;
         private readonly Label[] Labels;
@@ -128,13 +130,13 @@ namespace pk3DS
             int index = int.Parse(name[6]+"");
 
             int species = (sender as ComboBox).SelectedIndex;
-            Previews[group][index].Image = Util.scaleImage(Util.getSprite(species, 0, 0, 0), 3);
+            Previews[group][index].Image = WinFormsUtil.scaleImage(WinFormsUtil.getSprite(species, 0, 0, 0, Main.Config), 3);
         }
 
         private void B_Randomize_Click(object sender, EventArgs e)
         {
             bool blind = DialogResult.Yes ==
-                         Util.Prompt(MessageBoxButtons.YesNo, "Hide randomization, save, and close?",
+                         WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Hide randomization, save, and close?",
                              "If you want the Starters to be a surprise :)");
             if (blind)
                 Hide();
@@ -143,27 +145,29 @@ namespace pk3DS
             for (int i = 0; i < Count; i++)
             {
                 // Get Species List
-                int gen = int.Parse(Labels[i].Text[4]+"");
-                int[] sL = CHK_Gen.Checked
-                    ? Randomizer.getSpeciesList(gen==1, gen==2, gen==3, gen==4, gen==5, gen==6, false, false, false)
-                    : Randomizer.getSpeciesList(true, true, true, true, true, true, false, false, false);
-                int ctr = 0;
+
+                int gen = int.Parse(Labels[i].Text[4] + "");
+                var rand = new SpeciesRandomizer(Main.Config)
+                {
+                    G1 = !CHK_Gen.Checked || gen == 1,
+                    G2 = !CHK_Gen.Checked || gen == 2,
+                    G3 = !CHK_Gen.Checked || gen == 3,
+                    G4 = !CHK_Gen.Checked || gen == 4,
+                    G5 = !CHK_Gen.Checked || gen == 5,
+                    G6 = !CHK_Gen.Checked || gen == 6,
+
+                    L = false,
+                    E = false,
+                    Shedinja = false,
+
+                    rBST = CHK_BST.Checked,
+                };
+                rand.Initialize();
                 // Assign Species
                 for (int j = 0; j < 3; j++)
                 {
-                    int species = Randomizer.getRandomSpecies(ref sL, ref ctr);
-
-                    if (CHK_BST.Checked) // Enforce BST
-                    {
-                        int oldSpecies = BitConverter.ToUInt16(Data, offset + (i*3 + j)*0x54);
-                        PersonalInfo oldpkm = Main.SpeciesStat[oldSpecies]; // Use original species cuz why not.
-                        PersonalInfo pkm = Main.SpeciesStat[species];
-
-                        while (!(pkm.BST * 5 / 6 < oldpkm.BST && pkm.BST * 6 / 5 > oldpkm.BST))
-                        { species = Randomizer.getRandomSpecies(ref sL, ref ctr); pkm = Main.SpeciesStat[species]; }
-                    }
-
-                    Choices[i][j].SelectedIndex = species;
+                    int oldSpecies = BitConverter.ToUInt16(Data, offset + (i * 3 + j) * 0x54);
+                    Choices[i][j].SelectedIndex = rand.GetRandomSpecies(oldSpecies);
                 }
             }
 

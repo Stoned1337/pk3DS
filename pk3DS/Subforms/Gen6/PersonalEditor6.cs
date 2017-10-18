@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Media;
 using System.Text;
 using System.Windows.Forms;
-using pk3DS.Properties;
+using pk3DS.Core.Structures.PersonalInfo;
+using pk3DS.Core;
+using pk3DS.Core.Randomizers;
 
 namespace pk3DS
 {
@@ -22,11 +26,11 @@ namespace pk3DS
             rstat_boxes = new[] { CHK_rHP, CHK_rATK, CHK_rDEF, CHK_rSPA, CHK_rSPD, CHK_rSPE };
             files = infiles;
 
-            abilities = Main.getText(TextName.AbilityNames);
-            moves = Main.getText(TextName.MoveNames);
-            items = Main.getText(TextName.ItemNames);
-            species = Main.getText(TextName.SpeciesNames);
-            types = Main.getText(TextName.Types);
+            abilities = Main.Config.getText(TextName.AbilityNames);
+            moves = Main.Config.getText(TextName.MoveNames);
+            items = Main.Config.getText(TextName.ItemNames);
+            species = Main.Config.getText(TextName.SpeciesNames);
+            types = Main.Config.getText(TextName.Types);
             species[0] = "---";
             abilities[0] = items[0] = moves[0] = "";
             string[][] AltForms = Main.Config.Personal.getFormList(species, Main.Config.MaxSpeciesID);
@@ -42,7 +46,7 @@ namespace pk3DS
         private string[] items = { };
         private string[] moves = { };
         private string[] species = { };
-        private string[] abilities = { };
+        private readonly string[] abilities = { };
 
         private readonly ComboBox[] helditem_boxes;
         private readonly ComboBox[] ability_boxes;
@@ -53,11 +57,11 @@ namespace pk3DS
         private readonly MaskedTextBox[] ev_boxes;
         private readonly CheckBox[] rstat_boxes;
 
-        public string[] types = { };
+        private readonly string[] types = { };
 
-        public string[] eggGroups = { "---", "Monster", "Water 1", "Bug", "Flying", "Field", "Fairy", "Grass", "Human-Like", "Water 3", "Mineral", "Amorphous", "Water 2", "Ditto", "Dragon", "Undiscovered" };
-        public string[] EXPGroups = { "Medium-Fast", "Erratic", "Fluctuating", "Medium-Slow", "Fast", "Slow" };
-        public string[] colors = { "Red", "Blue", "Yellow", "Green", "Black", "Brown", "Purple", "Gray", "White", "Pink" };
+        private readonly string[] eggGroups = { "---", "Monster", "Water 1", "Bug", "Flying", "Field", "Fairy", "Grass", "Human-Like", "Water 3", "Mineral", "Amorphous", "Water 2", "Ditto", "Dragon", "Undiscovered" };
+        private readonly string[] EXPGroups = { "Medium-Fast", "Erratic", "Fluctuating", "Medium-Slow", "Fast", "Slow" };
+        private readonly string[] colors = { "Red", "Blue", "Yellow", "Green", "Black", "Brown", "Purple", "Gray", "White", "Pink" };
 
         /*
         public string[] tutormoves = { "Frenzy Plant", "Blast Burn", "Hydro Cannon", "Grass Pledge", "Fire Pledge", "Water Pledge", "Draco Meteor", "Dragon's Ascent" };
@@ -66,11 +70,11 @@ namespace pk3DS
         public string[] tutor3 = { "Bind", "Snore", "Knock Off", "Synthesis", "Heat Wave", "Role Play", "Heal Bell", "Tailwind", "Sky Attack", "Pain Split", "Giga Drain", "Drain Punch", "Air Cutter", "Focus Punch", "Shock Wave", "Water Pulse" };
         public string[] tutor4 = { "Gastro Acid", "Worry Seed", "Spite", "After You", "Helping Hand", "Trick", "Magic Room", "Wonder Room", "Endeavor", "Outrage", "Recycle", "Snatch", "Stealth Rock", "Sleep Talk", "Skill Swap" };
         */
-        public ushort[] tutormoves = { 338, 307, 308, 520, 519, 518, 434, 620 };
-        public ushort[] tutor1 = { 450, 343, 162, 530, 324, 442, 402, 529, 340, 67, 441, 253, 9, 7, 8 };
-        public ushort[] tutor2 = { 277, 335, 414, 492, 356, 393, 334, 387, 276, 527, 196, 401, 399, 428, 406, 304, 231 };
-        public ushort[] tutor3 = { 20, 173, 282, 235, 257, 272, 215, 366, 143, 220, 202, 409, 314, 264, 351, 352 };
-        public ushort[] tutor4 = { 380, 388, 180, 495, 270, 271, 478, 472, 283, 200, 278, 289, 446, 214, 285 };
+        private readonly ushort[] tutormoves = { 520, 519, 518, 338, 307, 308, 434, 620 };
+        private readonly ushort[] tutor1 = { 450, 343, 162, 530, 324, 442, 402, 529, 340, 067, 441, 253, 009, 007, 008 };
+        private readonly ushort[] tutor2 = { 277, 335, 414, 492, 356, 393, 334, 387, 276, 527, 196, 401, 399, 428, 406, 304, 231 };
+        private readonly ushort[] tutor3 = { 020, 173, 282, 235, 257, 272, 215, 366, 143, 220, 202, 409, 355, 264, 351, 352 };
+        private readonly ushort[] tutor4 = { 380, 388, 180, 495, 270, 271, 478, 472, 283, 200, 278, 289, 446, 214, 285 };
 
         private readonly int[] baseForms, formVal;
         int entry = -1;
@@ -86,16 +90,16 @@ namespace pk3DS
             if (TMs.Length == 0) // No ExeFS to grab TMs from.
             {
                 for (int i = 1; i <= 100; i++)
-                    CLB_TMHM.Items.Add("TM" + i.ToString("00"));
+                    CLB_TMHM.Items.Add($"TM{i:00}");
                 for (int i = 1; i <= hmcount; i++)
-                    CLB_TMHM.Items.Add("HM" + i.ToString("00"));
+                    CLB_TMHM.Items.Add($"HM{i:00}");
             }
             else // Use TMHM moves.
             {
                 for (int i = 1; i <= 100; i++)
-                    CLB_TMHM.Items.Add($"TM{i.ToString("00")} {moves[TMs[i - 1]]}");
+                    CLB_TMHM.Items.Add($"TM{i:00} {moves[TMs[i - 1]]}");
                 for (int i = 1; i <= hmcount; i++)
-                    CLB_TMHM.Items.Add($"HM{i.ToString("00")} {moves[HMs[i - 1]]}");
+                    CLB_TMHM.Items.Add($"HM{i:00} {moves[HMs[i - 1]]}");
             }
             for (int i = 0; i < tutormoves.Length - 1; i++)
                 CLB_MoveTutors.Items.Add(moves[tutormoves[i]]);
@@ -114,9 +118,10 @@ namespace pk3DS
                 Array.Copy(species, temp_species, temp_species.Length);
                 species = temp_species;
 
-                CLB_OrasTutors.Visible = 
+                CLB_OrasTutors.Visible =
                 CLB_OrasTutors.Enabled =
                 L_ORASTutors.Visible = false;
+                CHK_ORASTutors.Visible = false;
             }
             else if (mode == "ORAS")
             {
@@ -135,7 +140,7 @@ namespace pk3DS
                 L_ORASTutors.Visible = true;
             }
             for (int i = 0; i < species.Length; i++)
-                CB_Species.Items.Add($"{species[i]} - {i.ToString("000")}");
+                CB_Species.Items.Add($"{species[i]} - {i:000}");
 
             foreach (ComboBox cb in helditem_boxes)
                 foreach (string it in items)
@@ -168,9 +173,9 @@ namespace pk3DS
         }
         private void ByteLimiter(object sender, EventArgs e)
         {
-            MaskedTextBox mtb = sender as MaskedTextBox;
-            int val;
-            int.TryParse(mtb.Text, out val);
+            if (!(sender is MaskedTextBox mtb))
+                return;
+            int.TryParse(mtb.Text, out int val);
             if (Array.IndexOf(byte_boxes, mtb) > -1 && val > 255)
                 mtb.Text = "255";
             else if (Array.IndexOf(ev_boxes, mtb) > -1 && val > 3)
@@ -254,9 +259,7 @@ namespace pk3DS
             int f = formVal[entry];
             if (entry <= Main.Config.MaxSpeciesID)
                 s = entry;
-            int[] specForm = { s, f };
-            string filename = "_" + specForm[0] + (CB_Species.SelectedIndex > 721 ? "_" + (specForm[1] + 1) : "");
-            Bitmap rawImg = (Bitmap)Resources.ResourceManager.GetObject(filename);
+            Bitmap rawImg = WinFormsUtil.getSprite(s, f, 0, 0, Main.Config);
             Bitmap bigImg = new Bitmap(rawImg.Width * 2, rawImg.Height * 2);
             for (int x = 0; x < rawImg.Width; x++)
             {
@@ -309,7 +312,7 @@ namespace pk3DS
             decimal w; decimal.TryParse(TB_Weight.Text, out w);
             pkm.Height = (int)(h * 100);
             pkm.Weight = (int)(w * 10);
-
+            
             for (int i = 0; i < CLB_TMHM.Items.Count; i++)
                 pkm.TMHM[i] = CLB_TMHM.GetItemChecked(i);
 
@@ -333,103 +336,32 @@ namespace pk3DS
 
         private void B_Randomize_Click(object sender, EventArgs e)
         {
-            Random rnd = new Random();
-            const int TMPercent = 35; // Average Learnable TMs is 35.260.
-            const int TutorPercent = 2; //136 special tutor moves learnable by species in Untouched ORAS.
-            const int OrasTutorPercent = 30; //10001 tutor moves learnable by 826 species in Untouched ORAS.
-            ushort[] itemlist = Main.Config.ORAS ? Legal.Pouch_Items_ORAS : Legal.Pouch_Items_XY;
-            ushort[] berrylist = Legal.Pouch_Berry_XY;
-            Array.Resize(ref itemlist, itemlist.Length + berrylist.Length);
-            Array.Copy(berrylist, 0, itemlist, itemlist.Length - berrylist.Length, berrylist.Length);
-
-            int itemlen = itemlist.Length;
-            int abillen = CB_Ability1.Items.Count;
-            int typelen = CB_Type1.Items.Count;
-
-            for (int i = 1; i < CB_Species.Items.Count; i++)
-            {
-                CB_Species.SelectedIndex = i; // Get new Species
-
-                // Fiddle with TM Learnsets
-                if (CHK_TM.Checked)
-                    for (int t = 0; t < 100; t++)
-                        CLB_TMHM.SetItemCheckState(t, rnd.Next(0, 100) < TMPercent ? CheckState.Checked : CheckState.Unchecked);
-                if (CHK_HM.Checked)
-                    for (int t = 100; t < CLB_TMHM.Items.Count;t++)
-                        CLB_TMHM.SetItemCheckState(t, rnd.Next(0, 100) < TMPercent ? CheckState.Checked : CheckState.Unchecked);
-                if (CHK_Tutors.Checked)
-                {
-                    for (int t = 0; t < CLB_MoveTutors.Items.Count; t++)
-                        CLB_MoveTutors.SetItemCheckState(t, rnd.Next(0, 100) < TutorPercent ? CheckState.Checked : CheckState.Unchecked);
-                    if (Main.Config.ORAS && (CB_Species.SelectedIndex == 384 || CB_Species.SelectedIndex == 814)) //Make sure Rayquaza can learn Dragon Ascent.
-                        CLB_MoveTutors.SetItemCheckState(CLB_MoveTutors.Items.Count-1, CheckState.Checked); 
-                }
-                if (Main.Config.ORAS && CHK_ORASTutors.Checked)
-                    for (int t = 0; t < CLB_OrasTutors.Items.Count; t++)
-                        CLB_OrasTutors.SetItemCheckState(t, rnd.Next(0, 100) < OrasTutorPercent ? CheckState.Checked : CheckState.Unchecked);
-
-                // Abilities:
-                if (CHK_Ability.Checked)
-                {
-                    ComboBox[] abils = {CB_Ability1, CB_Ability2, CB_Ability3};
-                    for (int a = 0; a < 3; a++) // Set 3 New Abilities, none being Wonder Guard (25) unless CHK_WGuard is checked.
-                    {
-                        int newabil = rnd.Next(1, abillen);
-                        while (newabil == 25 && !CHK_WGuard.Checked)
-                            newabil = rnd.Next(1, abillen);
-                        if (abils[a].SelectedIndex != 25 || CHK_WGuard.Checked) abils[a].SelectedIndex = newabil;
-                    }
-                }
-
-                // Fiddle with Base Stats, don't muck with Shedinja.
-                if (CHK_Stats.Checked)
-                {
-                    if (Convert.ToByte(byte_boxes[0].Text) != 1)
-                        for (int z = 0; z < 6; z++)
-                            if (rstat_boxes[z].Checked)
-                                byte_boxes[z].Text =
-                                    Math.Max(5,rnd.Next(
-                                            Math.Min(255, (int) (Convert.ToByte(byte_boxes[z].Text)*(1 - NUD_StatDev.Value/100))),
-                                            Math.Min(255, (int) (Convert.ToByte(byte_boxes[z].Text)*(1 + NUD_StatDev.Value/100)))
-                                            )).ToString("000");
-                }
-                // EV yield stays the same...
-
-                if (CHK_CatchRate.Checked)
-                    TB_CatchRate.Text = rnd.Next(3, 251).ToString("000"); //Random Catch Rate between 3 and 250. Should I make this normally distributed?
-                if (CHK_EggGroup.Checked)
-                {
-                    if (rnd.Next(0, 100) < NUD_Egg.Value) // 50% chance to have either One or Two Egg Groups
-                        CB_EggGroup1.SelectedIndex = CB_EggGroup2.SelectedIndex = rnd.Next(1, CB_EggGroup1.Items.Count);
-                    else
-                    {
-                        CB_EggGroup1.SelectedIndex = rnd.Next(1, CB_EggGroup1.Items.Count);
-                        CB_EggGroup2.SelectedIndex = rnd.Next(1, CB_EggGroup1.Items.Count);
-                    }
-                }
-
-                // Items
-                if (CHK_Item.Checked)
-                {
-                    CB_HeldItem1.SelectedIndex = itemlist[rnd.Next(1, itemlen)];
-                    CB_HeldItem2.SelectedIndex = itemlist[rnd.Next(1, itemlen)];
-                    CB_HeldItem3.SelectedIndex = itemlist[rnd.Next(1, itemlen)];
-                }
-
-                // Type
-                if (CHK_Type.Checked)
-                {
-                    if (rnd.Next(0, 100) < NUD_TypePercent.Value) // 50% chance to have either Single or Dual Typing
-                        CB_Type1.SelectedIndex = CB_Type2.SelectedIndex = rnd.Next(0, typelen);
-                    else
-                    {
-                        CB_Type1.SelectedIndex = rnd.Next(0, typelen);
-                        CB_Type2.SelectedIndex = rnd.Next(0, typelen);
-                    }
-                }
-            }
             saveEntry();
-            Util.Alert("All relevant Pokemon Personal Entries have been randomized!");
+
+            // input settings
+            var rnd = new PersonalRandomizer(Main.SpeciesStat, Main.Config)
+            {
+                TypeCount = CB_Type1.Items.Count,
+                ModifyCatchRate = CHK_CatchRate.Checked,
+                ModifyEggGroup = CHK_EggGroup.Checked,
+                ModifyStats = CHK_Stats.Checked,
+                StatsToRandomize = rstat_boxes.Select(g => g.Checked).ToArray(),
+                ModifyAbilities = CHK_Ability.Checked,
+                ModifyLearnsetTM = CHK_TM.Checked,
+                ModifyLearnsetHM = CHK_HM.Checked,
+                ModifyLearnsetTypeTutors = CHK_Tutors.Checked,
+                ModifyLearnsetMoveTutors = Main.Config.ORAS && CHK_ORASTutors.Checked,
+                ModifyTypes = CHK_Type.Checked,
+                ModifyHeldItems = CHK_Item.Checked,
+                SameTypeChance = NUD_TypePercent.Value,
+                SameEggGroupChance = NUD_Egg.Value,
+                StatDeviation = NUD_StatDev.Value,
+                AllowWonderGuard = CHK_WGuard.Checked
+            };
+            rnd.Execute();
+
+            readEntry();
+            WinFormsUtil.Alert("All relevant Pokémon Personal Entries have been randomized!");
         }
         private void B_ModifyAll(object sender, EventArgs e)
         {
@@ -440,8 +372,6 @@ namespace pk3DS
                 if (CHK_NoEV.Checked)
                     for (int z = 0; z < 6; z++)
                         ev_boxes[z].Text = 0.ToString();
-                if (CHK_LowCatch.Checked)
-                    TB_CatchRate.Text = 3.ToString("000");
                 if (CHK_Growth.Checked)
                     CB_EXPGroup.SelectedIndex = 5;
                 if (CHK_EXP.Checked)
@@ -449,61 +379,56 @@ namespace pk3DS
 
                 if (CHK_QuickHatch.Checked)
                     TB_HatchCycles.Text = 1.ToString();
+                if(CHK_CatchRateMod.Checked)
+                    TB_CatchRate.Text = ((int)NUD_CatchRateMod.Value).ToString();
             }
             CB_Species.SelectedIndex = 1;
-            Util.Alert("All species modified to specification!");
+            WinFormsUtil.Alert("All species modified according to specification!");
         }
         private bool dumping;
         private void B_Dump_Click(object sender, EventArgs e)
         {
-
-            if (DialogResult.Yes != Util.Prompt(MessageBoxButtons.YesNo, "Dump all Personal Entries to Text File?"))
+            if (DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Dump all Personal Entries to Text File?"))
+                return;
+            SaveFileDialog sfd = new SaveFileDialog { FileName = "Personal Entries.txt", Filter = "Text File|*.txt" };
+            SystemSounds.Asterisk.Play();
+            if (sfd.ShowDialog() != DialogResult.OK)
                 return;
 
             dumping = true;
-            string result = "";
+            List<string> lines = new List<string>();
             for (int i = 0; i < CB_Species.Items.Count; i++)
             {
                 CB_Species.SelectedIndex = i; // Get new Species
-                result += "======" + Environment.NewLine + entry + " - " + CB_Species.Text + " (Stage: " + TB_Stage.Text + ")" + Environment.NewLine + "======" + Environment.NewLine;
+                lines.Add("======");
+                lines.Add($"{entry} - {CB_Species.Text} (Stage: {TB_Stage.Text})");
+                lines.Add("======");
+                lines.Add($"Base Stats: {TB_BaseHP.Text}.{TB_BaseATK.Text}.{TB_BaseDEF.Text}.{TB_BaseSPA.Text}.{TB_BaseSPD.Text}.{TB_BaseSPE.Text} (BST: {pkm.BST})");
+                lines.Add($"EV Yield: {TB_HPEVs.Text}.{TB_ATKEVs.Text}.{TB_DEFEVs.Text}.{TB_SPAEVs.Text}.{TB_SPDEVs.Text}.{TB_SPEEVs.Text}");
+                lines.Add($"Abilities: {CB_Ability1.Text} (1) | {CB_Ability2.Text} (2) | {CB_Ability3.Text} (H)");
+                lines.Add(string.Format(CB_Type1.SelectedIndex != CB_Type2.SelectedIndex 
+                    ? "Type: {0} / {1}" 
+                    : "Type: {0}", CB_Type1.Text, CB_Type2.Text));
 
-                result +=
-                    $"Base Stats: {TB_BaseHP.Text}.{TB_BaseATK.Text}.{TB_BaseDEF.Text}.{TB_BaseSPA.Text}.{TB_BaseSPD.Text}.{TB_BaseSPE.Text} (BST: {pkm.BST})" + Environment.NewLine;
-                result +=
-                    $"EV Yield: {TB_HPEVs.Text}.{TB_ATKEVs.Text}.{TB_DEFEVs.Text}.{TB_SPAEVs.Text}.{TB_SPDEVs.Text}.{TB_SPEEVs.Text}" + Environment.NewLine;
-                result += $"Abilities: {CB_Ability1.Text} (1) | {CB_Ability2.Text} (2) | {CB_Ability3.Text} (H)" + Environment.NewLine;
+                lines.Add($"Item 1 (50%): {CB_HeldItem1.Text}");
+                lines.Add($"Item 2 (5%): {CB_HeldItem2.Text}");
+                lines.Add($"Item 3 (1%): {CB_HeldItem3.Text}");
 
-                result += string.Format(CB_Type1.SelectedIndex != CB_Type2.SelectedIndex ? "Type: {0} / {1}" : "Type: {0}", CB_Type1.Text, CB_Type2.Text) + Environment.NewLine;
-
-                result += $"Item 1 (50%): {CB_HeldItem1.Text}" + Environment.NewLine;
-                result += $"Item 2 (5%): {CB_HeldItem2.Text}" + Environment.NewLine;
-                result += $"Item 3 (1%): {CB_HeldItem3.Text}" + Environment.NewLine;
-                // I don't want to add anything else. Should be pretty easy for anyone else to expand.
-
-                result += $"EXP Group: {CB_EXPGroup.Text}" + Environment.NewLine;
-
-                result += string.Format(CB_EggGroup1.SelectedIndex != CB_EggGroup2.SelectedIndex ? "Egg Group: {0} / {1}" : "Egg Group: {0}", CB_EggGroup1.Text, CB_EggGroup2.Text) + Environment.NewLine;
-
-                result += $"Hatch Cycles: {TB_HatchCycles.Text}" + Environment.NewLine;
-
-                result += String.Format("Height: {0} m, Weight: {1} kg, Color: {2}", TB_Height.Text, TB_Weight.Text, CB_Color.Text) + Environment.NewLine;
-
-                result += Environment.NewLine;
+                lines.Add($"EXP Group: {CB_EXPGroup.Text}");
+                lines.Add(string.Format(CB_EggGroup1.SelectedIndex != CB_EggGroup2.SelectedIndex
+                        ? "Egg Group: {0} / {1}"
+                        : "Egg Group: {0}", CB_EggGroup1.Text, CB_EggGroup2.Text));
+                lines.Add($"Hatch Cycles: {TB_HatchCycles.Text}");
+                lines.Add($"Height: {TB_Height.Text} m, Weight: {TB_Weight.Text} kg, Color: {CB_Color.Text}");
+                lines.Add("");
             }
-
-            SaveFileDialog sfd = new SaveFileDialog {FileName = "Personal Entries.txt", Filter = "Text File|*.txt"};
-
-            SystemSounds.Asterisk.Play();
-            if (sfd.ShowDialog() == DialogResult.OK)
-            {
-                string path = sfd.FileName;
-                File.WriteAllText(path, result, Encoding.Unicode);
-            }
-            dumping = false;
+            string path = sfd.FileName;
+            File.WriteAllLines(path, lines, Encoding.Unicode);
         }
         private void CHK_Stats_CheckedChanged(object sender, EventArgs e)
         {
             L_StatDev.Visible = NUD_StatDev.Visible = CHK_Stats.Checked;
+            CHK_rHP.Enabled = CHK_rATK.Enabled = CHK_rDEF.Enabled = CHK_rSPA.Enabled = CHK_rSPD.Enabled = CHK_rSPE.Enabled = CHK_Stats.Checked;
         }
         private void CHK_Ability_CheckedChanged(object sender, EventArgs e)
         {

@@ -1,7 +1,9 @@
-﻿using System;
+﻿using pk3DS.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+using pk3DS.Core.Randomizers;
 
 namespace pk3DS
 {
@@ -17,8 +19,8 @@ namespace pk3DS
             trClassnorep.Sort();
         }
 
-        private string[] trName = Main.getText(TextName.TrainerNames);
-        private readonly string[] trClass = Main.getText(TextName.TrainerClasses);
+        private string[] trName = Main.Config.getText(TextName.TrainerNames);
+        private readonly string[] trClass = Main.Config.getText(TextName.TrainerClasses);
         private readonly List<string> trClassnorep;
 
         private void B_Close_Click(object sender, EventArgs e)
@@ -27,11 +29,14 @@ namespace pk3DS
         }
         private void B_Save_Click(object sender, EventArgs e)
         {
+            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Randomize all? Cannot undo.", "Double check Randomization settings before continuing.") != DialogResult.Yes)
+                return;
+
             RSTE.rPKM = CHK_RandomPKM.Checked;
-            RSTE.sL = Randomizer.getSpeciesList(CHK_G1.Checked, CHK_G2.Checked, CHK_G3.Checked, CHK_G4.Checked, CHK_G5.Checked, CHK_G6.Checked, CHK_L.Checked, CHK_E.Checked, ModifierKeys == Keys.Control);
             RSTE.rSmart = CHK_BST.Checked;
             RSTE.rLevel = CHK_Level.Checked;
-            RSTE.rLevelPercent = NUD_Level.Value;
+            RSTE.rLevelMultiplier = NUD_Level.Value;
+            RSTE.rNoFixedDamage = CHK_NoFixedDamage.Checked;
 
             RSTE.rMove = CB_Moves.SelectedIndex == 1;
             RSTE.rNoMove = CB_Moves.SelectedIndex == 2;
@@ -79,6 +84,22 @@ namespace pk3DS
             }
             
             RSTE.rThemedClasses = new bool[trClass.Length];
+            RSTE.rSpeciesRand = new SpeciesRandomizer(Main.Config)
+            {
+                G1 = CHK_G1.Checked,
+                G2 = CHK_G2.Checked,
+                G3 = CHK_G3.Checked,
+                G4 = CHK_G4.Checked,
+                G5 = CHK_G5.Checked,
+                G6 = CHK_G6.Checked,
+
+                L = CHK_L.Checked,
+                E = CHK_E.Checked,
+                Shedinja = true,
+
+                rBST = CHK_BST.Checked,
+            };
+            RSTE.rSpeciesRand.Initialize();
 
             RSTE.rDoRand = true;
             Close();
@@ -99,7 +120,6 @@ namespace pk3DS
         private void CHK_Level_CheckedChanged(object sender, EventArgs e)
         {
             NUD_Level.Enabled = CHK_Level.Checked;
-            NUD_Level.Value = Convert.ToDecimal(CHK_Level.Checked) * 50;
         }
         private void changeLevelPercent(object sender, EventArgs e)
         {

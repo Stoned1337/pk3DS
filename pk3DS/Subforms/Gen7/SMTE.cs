@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -6,31 +7,31 @@ using System.Media;
 using System.Text;
 using System.Windows.Forms;
 
+using pk3DS.Core;
+using pk3DS.Core.Randomizers;
+using pk3DS.Core.Structures;
+
 namespace pk3DS
 {
     public partial class SMTE : Form
     {
+        private readonly LearnsetRandomizer learn = new LearnsetRandomizer(Main.Config, Main.Config.Learnsets);
         private readonly trdata7[] Trainers;
         private string[][] AltForms;
-        private static readonly Random rand = new Random();
-        internal static uint rnd32()
-        {
-            return (uint)rand.Next(1 << 30) << 2 | (uint)rand.Next(1 << 2);
-        }
         private int index = -1;
         private PictureBox[] pba;
 
         private readonly byte[][] trclass, trdata, trpoke;
-        private readonly string[] abilitylist = Main.getText(TextName.AbilityNames);
-        private readonly string[] movelist = Main.getText(TextName.MoveNames);
-        private readonly string[] itemlist = Main.getText(TextName.ItemNames);
-        private readonly string[] specieslist = Main.getText(TextName.SpeciesNames);
-        private readonly string[] types = Main.getText(TextName.Types);
-        private readonly string[] natures = Main.getText(TextName.Natures);
+        private readonly string[] abilitylist = Main.Config.getText(TextName.AbilityNames);
+        private readonly string[] movelist = Main.Config.getText(TextName.MoveNames);
+        private readonly string[] itemlist = Main.Config.getText(TextName.ItemNames);
+        private readonly string[] specieslist = Main.Config.getText(TextName.SpeciesNames);
+        private readonly string[] types = Main.Config.getText(TextName.Types);
+        private readonly string[] natures = Main.Config.getText(TextName.Natures);
         private readonly string[] forms = Enumerable.Range(0, 1000).Select(i => i.ToString("000")).ToArray();
-        private string[] trName = Main.getText(TextName.TrainerNames);
-        private readonly string[] trClass = Main.getText(TextName.TrainerClasses);
-        private readonly string[] trText = Main.getText(TextName.TrainerText);
+        private string[] trName = Main.Config.getText(TextName.TrainerNames);
+        private readonly string[] trClass = Main.Config.getText(TextName.TrainerClasses);
+        private readonly string[] trText = Main.Config.getText(TextName.TrainerText);
 
         public SMTE(byte[][] trc, byte[][] trd, byte[][] trp)
         {
@@ -48,6 +49,7 @@ namespace pk3DS
                 pb.Click += clickSlot;
 
             CB_TrainerID.SelectedIndex = 0;
+            CB_Moves.SelectedIndex = 0;
         }
 
         private int getSlot(object sender)
@@ -85,8 +87,8 @@ namespace pk3DS
         private void clickSet(object sender, EventArgs e)
         {
             int slot = getSlot(sender);
-            if (CB_Pokemon.SelectedIndex == 0)
-            { Util.Alert("Can't set empty slot."); return; }
+            if (CB_Species.SelectedIndex == 0)
+            { WinFormsUtil.Alert("Can't set empty slot."); return; }
 
             var pk = prepareTP7();
             var tr = Trainers[index];
@@ -96,7 +98,7 @@ namespace pk3DS
             {
                 tr.Pokemon.Add(pk);
                 slot = tr.Pokemon.Count - 1;
-                Trainers[index].NumPokemon = (int)(++NUD_NumPoke.Value);
+                Trainers[index].NumPokemon = (int)++NUD_NumPoke.Value;
             }
 
             getQuickFiller(pba[slot], pk);
@@ -109,7 +111,7 @@ namespace pk3DS
             if (slot < Trainers[index].NumPokemon)
             {
                 Trainers[index].Pokemon.RemoveAt(slot);
-                Trainers[index].NumPokemon = (int)(--NUD_NumPoke.Value);
+                Trainers[index].NumPokemon = (int)--NUD_NumPoke.Value;
             }
 
             populateTeam(Trainers[index]);
@@ -133,8 +135,8 @@ namespace pk3DS
         }
         private static void getQuickFiller(PictureBox pb, trpoke7 pk)
         {
-            Bitmap rawImg = Util.getSprite(pk.Species, pk.Form, pk.Gender, pk.Item, pk.Shiny);
-            pb.Image = Util.scaleImage(rawImg, 2);
+            Bitmap rawImg = WinFormsUtil.getSprite(pk.Species, pk.Form, pk.Gender, pk.Item, Main.Config, pk.Shiny);
+            pb.Image = WinFormsUtil.scaleImage(rawImg, 2);
         }
 
         // Top Level Functions
@@ -149,15 +151,15 @@ namespace pk3DS
         {
             if (index < 0)
                 return;
-            pkm.Species = (ushort)CB_Pokemon.SelectedIndex;
-            FormUtil.setForms(CB_Pokemon.SelectedIndex, CB_Forme, AltForms);
+            pkm.Species = (ushort)CB_Species.SelectedIndex;
+            FormUtil.setForms(CB_Species.SelectedIndex, CB_Forme, AltForms);
             refreshPKMSlotAbility();
         }
         private void refreshPKMSlotAbility()
         {
             int previousAbility = CB_Ability.SelectedIndex;
 
-            int species = CB_Pokemon.SelectedIndex;
+            int species = CB_Species.SelectedIndex;
             int formnum = CB_Forme.SelectedIndex;
             species = Main.SpeciesStat[species].FormeIndex(species, formnum);
 
@@ -198,9 +200,9 @@ namespace pk3DS
             abilitylist[0] = itemlist[0] = movelist[0] = "(None)";
             pba = new[] { PB_Team1, PB_Team2, PB_Team3, PB_Team4, PB_Team5, PB_Team6 };
             
-            CB_Pokemon.Items.Clear();
+            CB_Species.Items.Clear();
             foreach (string s in specieslist)
-                CB_Pokemon.Items.Add(s);
+                CB_Species.Items.Add(s);
 
             CB_Move1.Items.Clear();
             CB_Move2.Items.Clear();
@@ -232,29 +234,22 @@ namespace pk3DS
 
             CB_Forme.Items.Add("");
 
-            CB_Pokemon.SelectedIndex = 0;
+            CB_Species.SelectedIndex = 0;
             CB_Item_1.Items.Clear();
             CB_Item_2.Items.Clear();
             CB_Item_3.Items.Clear();
             CB_Item_4.Items.Clear();
-            CB_Prize.Items.Clear();
             foreach (string s in itemlist)
             {
                 CB_Item_1.Items.Add(s);
                 CB_Item_2.Items.Add(s);
                 CB_Item_3.Items.Add(s);
                 CB_Item_4.Items.Add(s);
-                CB_Prize.Items.Add(s);
             }
 
             CB_Money.Items.Clear();
             for (int i = 0; i < 256; i++)
             { CB_Money.Items.Add(i.ToString()); }
-
-            CB_Battle_Type.Items.Clear();
-            CB_Battle_Type.Items.Add("Single");
-            CB_Battle_Type.Items.Add("Double");
-            CB_Battle_Type.Items.Add("Royal");
 
             CB_TrainerID.SelectedIndex = 0;
             index = 0;
@@ -266,6 +261,8 @@ namespace pk3DS
         {
             saveEntry();
             loadEntry();
+            if (TC_trdata.SelectedIndex == TC_trdata.TabCount - 1) // last
+                TC_trdata.SelectedIndex = 0;
         }
         private void saveEntry()
         {
@@ -273,23 +270,30 @@ namespace pk3DS
                 return;
             var tr = Trainers[index];
             prepareTR7(tr);
+            saveData(tr, index);
+            trName[index] = TB_TrainerName.Text;
+        }
+        private void saveData(trdata7 tr, int i)
+        {
             byte[] trd;
             byte[] trp;
             tr.Write(out trd, out trp);
-            trdata[index] = trd;
-            trpoke[index] = trp;
-            trName[index] = TB_TrainerName.Text;
+            trdata[i] = trd;
+            trpoke[i] = trp;
         }
         private void loadEntry()
         {
             index = CB_TrainerID.SelectedIndex;
             var tr = Trainers[index];
 
+            loading = true;
             TB_TrainerName.Text = trName[index];
 
             populateFieldsTD7(tr);
+            loading = false;
         }
 
+        private bool loading;
         private trpoke7 pkm;
         private void populateFieldsTP7(trpoke7 pk)
         {
@@ -297,7 +301,7 @@ namespace pk3DS
 
             int spec = pkm.Species, form = pkm.Form;
 
-            CB_Pokemon.SelectedIndex = spec;
+            CB_Species.SelectedIndex = spec;
             CB_Forme.SelectedIndex = form;
             CB_Ability.SelectedIndex = pkm.Ability;
             CB_Item.SelectedIndex = pkm.Item;
@@ -332,33 +336,33 @@ namespace pk3DS
         private trpoke7 prepareTP7()
         {
             var pk = pkm.Clone();
-            pk.Species = (ushort)CB_Pokemon.SelectedIndex;
+            pk.Species = CB_Species.SelectedIndex;
             pk.Form = CB_Forme.SelectedIndex;
             pk.Level = (byte)NUD_Level.Value;
             pk.Ability = CB_Ability.SelectedIndex;
-            pk.Item = (ushort) CB_Item.SelectedIndex;
+            pk.Item = CB_Item.SelectedIndex;
             pk.Shiny = CHK_Shiny.Checked;
             pk.Nature = CB_Nature.SelectedIndex;
             pk.Gender = CB_Gender.SelectedIndex;
 
-            pk.Move1 = (ushort)CB_Move1.SelectedIndex;
-            pk.Move2 = (ushort)CB_Move2.SelectedIndex;
-            pk.Move3 = (ushort)CB_Move3.SelectedIndex;
-            pk.Move4 = (ushort)CB_Move4.SelectedIndex;
+            pk.Move1 = CB_Move1.SelectedIndex;
+            pk.Move2 = CB_Move2.SelectedIndex;
+            pk.Move3 = CB_Move3.SelectedIndex;
+            pk.Move4 = CB_Move4.SelectedIndex;
 
-            pk.IV_HP = Util.ToInt32(TB_HPIV);
-            pk.IV_ATK = Util.ToInt32(TB_ATKIV);
-            pk.IV_DEF = Util.ToInt32(TB_DEFIV);
-            pk.IV_SPA = Util.ToInt32(TB_SPAIV);
-            pk.IV_SPE = Util.ToInt32(TB_SPEIV);
-            pk.IV_SPD = Util.ToInt32(TB_SPDIV);
+            pk.IV_HP = WinFormsUtil.ToInt32(TB_HPIV);
+            pk.IV_ATK = WinFormsUtil.ToInt32(TB_ATKIV);
+            pk.IV_DEF = WinFormsUtil.ToInt32(TB_DEFIV);
+            pk.IV_SPA = WinFormsUtil.ToInt32(TB_SPAIV);
+            pk.IV_SPE = WinFormsUtil.ToInt32(TB_SPEIV);
+            pk.IV_SPD = WinFormsUtil.ToInt32(TB_SPDIV);
 
-            pk.EV_HP = Util.ToInt32(TB_HPEV);
-            pk.EV_ATK = Util.ToInt32(TB_ATKEV);
-            pk.EV_DEF = Util.ToInt32(TB_DEFEV);
-            pk.EV_SPA = Util.ToInt32(TB_SPAEV);
-            pk.EV_SPE = Util.ToInt32(TB_SPEEV);
-            pk.EV_SPD = Util.ToInt32(TB_SPDEV);
+            pk.EV_HP = WinFormsUtil.ToInt32(TB_HPEV);
+            pk.EV_ATK = WinFormsUtil.ToInt32(TB_ATKEV);
+            pk.EV_DEF = WinFormsUtil.ToInt32(TB_DEFEV);
+            pk.EV_SPA = WinFormsUtil.ToInt32(TB_SPAEV);
+            pk.EV_SPE = WinFormsUtil.ToInt32(TB_SPEEV);
+            pk.EV_SPD = WinFormsUtil.ToInt32(TB_SPDEV);
 
             return pk;
         }
@@ -367,12 +371,26 @@ namespace pk3DS
             // Load Trainer Data
             CB_Trainer_Class.SelectedIndex = tr.TrainerClass;
             NUD_NumPoke.Value = tr.NumPokemon;
+            CB_Item_1.SelectedIndex = tr.Item1;
+            CB_Item_2.SelectedIndex = tr.Item2;
+            CB_Item_3.SelectedIndex = tr.Item3;
+            CB_Item_4.SelectedIndex = tr.Item4;
+            CB_Money.SelectedIndex = tr.Money;
+            NUD_AI.Value = tr.AI;
+            CHK_Flag.Checked = tr.Flag;
             populateTeam(tr);
         }
         private void prepareTR7(trdata7 tr)
         {
             tr.TrainerClass = (byte)CB_Trainer_Class.SelectedIndex;
             tr.NumPokemon = (byte)NUD_NumPoke.Value;
+            tr.Item1 = CB_Item_1.SelectedIndex;
+            tr.Item2 = CB_Item_2.SelectedIndex;
+            tr.Item3 = CB_Item_3.SelectedIndex;
+            tr.Item4 = CB_Item_4.SelectedIndex;
+            tr.Money = CB_Money.SelectedIndex;
+            tr.AI = (int)NUD_AI.Value;
+            tr.Flag = CHK_Flag.Checked;
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -426,7 +444,13 @@ namespace pk3DS
         {
             if (index < 0)
                 return;
-            Trainers[index].NumPokemon = (int) (NUD_NumPoke.Value);
+            Trainers[index].NumPokemon = (int) NUD_NumPoke.Value;
+        }
+        private void updateTrainerName(object sender, EventArgs e)
+        {
+            if (loading)
+                return;
+            CB_TrainerID.Items[index] = $"{TB_TrainerName.Text} - {index:000}";
         }
 
         private static bool updatingStats;
@@ -440,35 +464,26 @@ namespace pk3DS
             for (int i = 0; i < 6; i++)
             {
                 updatingStats = true;
-                if (Util.ToInt32(tb_iv[i]) > 31)
+                if (WinFormsUtil.ToInt32(tb_iv[i]) > 31)
                     tb_iv[i].Text = "31";
-                if (Util.ToInt32(tb_ev[i]) > 255)
+                if (WinFormsUtil.ToInt32(tb_ev[i]) > 255)
                     tb_ev[i].Text = "255";
                 updatingStats = false;
             }
 
-            int species = CB_Pokemon.SelectedIndex;
+            int species = CB_Species.SelectedIndex;
             species = Main.SpeciesStat[species].FormeIndex(species, CB_Forme.SelectedIndex);
             var p = Main.SpeciesStat[species];
             int level = (int)NUD_Level.Value;
             int Nature = CB_Nature.SelectedIndex;
 
             ushort[] Stats = new ushort[6];
-            Stats[0] =
-                (ushort)
-                    (p.HP == 1
-                        ? 1
-                        : (Util.ToInt32(TB_HPIV.Text) + 2 * p.HP + Util.ToInt32(TB_HPEV.Text) / 4 + 100) * level / 100 + 10);
-            Stats[1] =
-                (ushort)((Util.ToInt32(TB_ATKIV.Text) + 2 * p.ATK + Util.ToInt32(TB_ATKEV.Text) / 4) * level / 100 + 5);
-            Stats[2] =
-                (ushort)((Util.ToInt32(TB_DEFIV.Text) + 2 * p.DEF + Util.ToInt32(TB_DEFEV.Text) / 4) * level / 100 + 5);
-            Stats[4] =
-                (ushort)((Util.ToInt32(TB_SPAIV.Text) + 2 * p.SPA + Util.ToInt32(TB_SPAEV.Text) / 4) * level / 100 + 5);
-            Stats[5] =
-                (ushort)((Util.ToInt32(TB_SPDIV.Text) + 2 * p.SPD + Util.ToInt32(TB_SPDEV.Text) / 4) * level / 100 + 5);
-            Stats[3] =
-                (ushort)((Util.ToInt32(TB_SPEIV.Text) + 2 * p.SPE + Util.ToInt32(TB_SPEEV.Text) / 4) * level / 100 + 5);
+            Stats[0] = (ushort)(p.HP == 1 ? 1 : (Util.ToInt32(TB_HPIV.Text) + 2 * p.HP + Util.ToInt32(TB_HPEV.Text) / 4 + 100) * level / 100 + 10);
+            Stats[1] = (ushort)((Util.ToInt32(TB_ATKIV.Text) + 2 * p.ATK + Util.ToInt32(TB_ATKEV.Text) / 4) * level / 100 + 5);
+            Stats[2] = (ushort)((Util.ToInt32(TB_DEFIV.Text) + 2 * p.DEF + Util.ToInt32(TB_DEFEV.Text) / 4) * level / 100 + 5);
+            Stats[4] = (ushort)((Util.ToInt32(TB_SPAIV.Text) + 2 * p.SPA + Util.ToInt32(TB_SPAEV.Text) / 4) * level / 100 + 5);
+            Stats[5] = (ushort)((Util.ToInt32(TB_SPDIV.Text) + 2 * p.SPD + Util.ToInt32(TB_SPDEV.Text) / 4) * level / 100 + 5);
+            Stats[3] = (ushort)((Util.ToInt32(TB_SPEIV.Text) + 2 * p.SPE + Util.ToInt32(TB_SPEEV.Text) / 4) * level / 100 + 5);
 
             // Account for nature
             int incr = Nature / 5 + 1;
@@ -488,8 +503,8 @@ namespace pk3DS
             Stat_SPD.Text = Stats[5].ToString();
             Stat_SPE.Text = Stats[3].ToString();
 
-            TB_IVTotal.Text = tb_iv.Select(tb => Util.ToInt32(tb)).Sum().ToString();
-            TB_EVTotal.Text = tb_ev.Select(tb => Util.ToInt32(tb)).Sum().ToString();
+            TB_IVTotal.Text = tb_iv.Select(WinFormsUtil.ToInt32).Sum().ToString();
+            TB_EVTotal.Text = tb_ev.Select(WinFormsUtil.ToInt32).Sum().ToString();
 
             // Recolor the Stat Labels based on boosted stats.
             {
@@ -507,9 +522,9 @@ namespace pk3DS
                     labarray[decr].ForeColor = Color.Blue;
                 }
             }
-            var ivs = tb_iv.Select(tb => Util.ToInt32(tb) & 1).ToArray();
+            var ivs = tb_iv.Select(tb => WinFormsUtil.ToInt32(tb) & 1).ToArray();
             updatingStats = true;
-            CB_HPType.SelectedIndex = 15 * ((ivs[0]) + 2 * ivs[1] + 4 * ivs[2] + 8 * ivs[3] + 16 * ivs[4] + 32 * ivs[5]) / 63;
+            CB_HPType.SelectedIndex = 15 * (ivs[0] + 2 * ivs[1] + 4 * ivs[2] + 8 * ivs[3] + 16 * ivs[4] + 32 * ivs[5]) / 63;
             updatingStats = false;
         }
 
@@ -518,7 +533,7 @@ namespace pk3DS
             if (updatingStats)
                 return;
             var tb_iv = new[] { TB_HPIV, TB_ATKIV, TB_DEFIV, TB_SPAIV, TB_SPDIV, TB_SPEIV };
-            int[] newIVs = setHPIVs(CB_HPType.SelectedIndex, tb_iv.Select(Util.ToInt32).ToArray());
+            int[] newIVs = setHPIVs(CB_HPType.SelectedIndex, tb_iv.Select(WinFormsUtil.ToInt32).ToArray());
             updatingStats = true;
             TB_HPIV.Text = newIVs[0].ToString();
             TB_ATKIV.Text = newIVs[1].ToString();
@@ -554,13 +569,186 @@ namespace pk3DS
             { 1, 1, 1, 1, 1, 1 }, // Dark
         };
 
+        private void B_Randomize_Click(object sender, EventArgs e)
+        {
+            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Randomize all? Cannot undo.", "Double check Randomization settings in the Misc/Rand tab.") != DialogResult.Yes) return;
+
+            CB_TrainerID.SelectedIndex = 0;
+            var rnd = new SpeciesRandomizer(Main.Config)
+            {
+                G1 = CHK_G1.Checked,
+                G2 = CHK_G2.Checked,
+                G3 = CHK_G3.Checked,
+                G4 = CHK_G4.Checked,
+                G5 = CHK_G5.Checked,
+                G6 = CHK_G6.Checked,
+                G7 = CHK_G7.Checked,
+
+                E = CHK_E.Checked,
+                L = CHK_L.Checked,
+                rBST = CHK_BST.Checked,
+            };
+            rnd.Initialize();
+
+            var banned = new List<int>(new[] { 165, 621, 464 }.Concat(Legal.Z_Moves)); // Struggle, Hyperspace Fury, Dark Void
+            if (CHK_NoFixedDamage.Checked)
+                banned.AddRange(MoveRandomizer.FixedDamageMoves);
+            var move = new MoveRandomizer(Main.Config)
+            {
+                BannedMoves = banned,
+                rSTABCount = (int) NUD_STAB.Value,
+                rDMG = CHK_Damage.Checked,
+                rDMGCount = (int) NUD_Damage.Value,
+                rSTAB = CHK_STAB.Checked
+            };
+
+            var items = Randomizer.getRandomItemList();
+            for (int i = 0; i < Trainers.Length; i++)
+            {
+                var tr = Trainers[i];
+                if (tr.Pokemon.Count == 0)
+                    continue;
+                // Trainer Properties
+                if (CHK_RandomClass.Checked)
+                {
+                    int rv;
+                    do
+                    {
+                        rv = (int) (Util.rnd32()%CB_Trainer_Class.Items.Count);
+                    } while (/*trClass[rv].StartsWith("[~") || */Legal.SpecialClasses_SM.Contains(rv) && !CHK_IgnoreSpecialClass.Checked);
+                    // don't allow disallowed classes
+                    tr.TrainerClass = (byte) rv;
+                }
+
+                if (tr.NumPokemon < NUD_RMin.Value)
+                {
+                    var avgBST = (int)tr.Pokemon.Average(pk => Main.SpeciesStat[pk.Species].BST);
+                    int avgLevel = (int)tr.Pokemon.Average(pk => pk.Level);
+                    var pinfo = Main.SpeciesStat.OrderBy(pk => Math.Abs(avgBST - pk.BST)).First();
+                    int avgSpec = Array.IndexOf(Main.SpeciesStat, pinfo);
+                    for (int p = tr.NumPokemon; p < NUD_RMin.Value; p++)
+                        tr.Pokemon.Add(new trpoke7
+                        {
+                            Species = rnd.GetRandomSpecies(avgSpec),
+                            Level = avgLevel,
+                        });
+                    tr.NumPokemon = (int)NUD_RMin.Value;
+                }
+                if (tr.NumPokemon > NUD_RMax.Value)
+                {
+                    tr.Pokemon.RemoveRange((int)NUD_RMax.Value, (int)(tr.NumPokemon - NUD_RMax.Value));
+                    tr.NumPokemon = (int)NUD_RMax.Value;
+                }
+
+                // PKM Properties
+                foreach (var pk in tr.Pokemon)
+                {
+                    if (CHK_RandomPKM.Checked)
+                    {
+                        int Type = CHK_TypeTheme.Checked ? (int)Util.rnd32()%17 : -1;
+                        pk.Species = rnd.GetRandomSpeciesType(pk.Species, Type);
+                        pk.Form = Randomizer.GetRandomForme(pk.Species, CHK_RandomMegaForm.Checked, true, Main.SpeciesStat);
+                        pk.Gender = 0; // Random Gender
+                    }
+                    if (CHK_Level.Checked)
+                        pk.Level = Randomizer.getModifiedLevel(pk.Level, NUD_LevelBoost.Value);
+                    if (CHK_RandomShiny.Checked)
+                        pk.Shiny = Util.rand.Next(0, 100 + 1) < NUD_Shiny.Value;
+                    if (CHK_RandomItems.Checked)
+                        pk.Item = items[Util.rnd32()%items.Length];
+                    if (CHK_RandomAbilities.Checked)
+                        pk.Ability = (int)Util.rnd32()%4;
+                    if (CHK_MaxDiffPKM.Checked)
+                        pk.IVs = new[] {31, 31, 31, 31, 31, 31};
+
+                    switch (CB_Moves.SelectedIndex)
+                    {
+                        case 1: // Random
+                            pk.Moves = move.GetRandomMoveset(pk.Species, 4);
+                            break;
+                        case 2: // Current LevelUp
+                            pk.Moves = learn.GetCurrentMoves(pk.Species, pk.Form, pk.Level, 4);
+                            break;
+                        case 3: // High Attacks
+                            pk.Moves = learn.GetHighPoweredMoves(pk.Species, pk.Form, 4);
+                            break;
+                    }
+                    // sanitize moves
+                    if (CB_Moves.SelectedIndex > 1) // learn source
+                    {
+                        var moves = pk.Moves;
+                        if (move.SanitizeMovesetForBannedMoves(moves, pk.Species))
+                            pk.Moves = moves;
+                    }
+                }
+                saveData(tr, i);
+            }
+            WinFormsUtil.Alert("Randomized all Trainers according to specification!", "Press the Dump to .TXT button to view the new Trainer information!");
+        }
         private void B_HighAttack_Click(object sender, EventArgs e)
         {
-
+            pkm.Species = CB_Species.SelectedIndex;
+            pkm.Level = (int)NUD_Level.Value;
+            pkm.Form = CB_Forme.SelectedIndex;
+            var moves = learn.GetHighPoweredMoves(pkm.Species, pkm.Form, 4);
+            setMoves(moves);
         }
         private void B_CurrentAttack_Click(object sender, EventArgs e)
         {
+            pkm.Species = CB_Species.SelectedIndex;
+            pkm.Level = (int)NUD_Level.Value;
+            pkm.Form = CB_Forme.SelectedIndex;
+            var moves = learn.GetCurrentMoves(pkm.Species, pkm.Form, 4);
+            setMoves(moves);
+        }
+        private void B_Clear_Click(object sender, EventArgs e)
+        {
+            setMoves(new int[4]);
+        }
+        private void setMoves(int[] moves)
+        {
+            var mcb = new[] { CB_Move1, CB_Move2, CB_Move3, CB_Move4 };
+            for (int i = 0; i < mcb.Length; i++)
+                mcb[i].SelectedIndex = moves[i];
+        }
 
+        // Randomization UI
+        private void CB_Moves_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            CHK_Damage.Visible = CHK_STAB.Visible = NUD_Damage.Visible = NUD_STAB.Visible = CB_Moves.SelectedIndex == 1; // Randomized
+        }
+        private void CHK_Damage_CheckedChanged(object sender, EventArgs e)
+        {
+            NUD_Damage.Enabled = CHK_Damage.Checked;
+        }
+        private void CHK_STAB_CheckedChanged(object sender, EventArgs e)
+        {
+            NUD_STAB.Enabled = CHK_STAB.Checked;
+        }
+        private void CHK_RandomPKM_CheckedChanged(object sender, EventArgs e)
+        {
+            CHK_BST.Visible = CHK_RandomPKM.Checked;
+            if (CHK_RandomPKM.Checked)
+                return;
+            foreach (CheckBox c in new[] { CHK_G1, CHK_G2, CHK_G3, CHK_G4, CHK_G5, CHK_G6, CHK_G7, CHK_L, CHK_E })
+            {
+                c.Visible = false;
+                c.Checked = true;
+            }
+        }
+        private void CHK_RandomClass_CheckedChanged(object sender, EventArgs e)
+        {
+            CHK_IgnoreSpecialClass.Enabled = CHK_RandomClass.Checked;
+            if (!CHK_RandomClass.Checked)
+                CHK_IgnoreSpecialClass.Checked = false;
+        }
+        private void CHK_RandomShiny_CheckedChanged(object sender, EventArgs e)
+        {
+            NUD_Shiny.Enabled = CHK_RandomShiny.Checked;
+        }
+        private void CHK_Level_CheckedChanged(object sender, EventArgs e)
+        {
+            NUD_LevelBoost.Enabled = CHK_Level.Checked;
         }
     }
 }

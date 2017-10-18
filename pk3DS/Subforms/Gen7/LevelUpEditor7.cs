@@ -6,7 +6,12 @@ using System.Linq;
 using System.Media;
 using System.Text;
 using System.Windows.Forms;
+
 using pk3DS.Properties;
+
+using pk3DS.Core.Structures;
+using pk3DS.Core;
+using pk3DS.Core.Randomizers;
 
 namespace pk3DS
 {
@@ -16,7 +21,7 @@ namespace pk3DS
         {
             InitializeComponent();
             files = infiles;
-            string[] species = Main.getText(TextName.SpeciesNames);
+            string[] species = Main.Config.getText(TextName.SpeciesNames);
             string[][] AltForms = Main.Config.Personal.getFormList(species, Main.Config.MaxSpeciesID);
             string[] specieslist = Main.Config.Personal.getPersonalEntryList(AltForms, species, Main.Config.MaxSpeciesID, out baseForms, out formVal);
             specieslist[0] = movelist[0] = "";
@@ -25,11 +30,11 @@ namespace pk3DS
             Array.Resize(ref sortedspecies, Main.Config.MaxSpeciesID + 1); Array.Sort(sortedspecies);
             setupDGV();
 
-            var newlist = new List<Util.cbItem>();
+            var newlist = new List<WinFormsUtil.cbItem>();
             for (int i = 1; i <= Main.Config.MaxSpeciesID; i++) // add all species
-                newlist.Add(new Util.cbItem { Text = sortedspecies[i], Value = Array.IndexOf(specieslist, sortedspecies[i]) });
+                newlist.Add(new WinFormsUtil.cbItem { Text = sortedspecies[i], Value = Array.IndexOf(specieslist, sortedspecies[i]) });
             for (int i = Main.Config.MaxSpeciesID + 1; i < specieslist.Length; i++) // add all forms
-                newlist.Add(new Util.cbItem { Text = specieslist[i], Value = i });
+                newlist.Add(new WinFormsUtil.cbItem { Text = specieslist[i], Value = i });
 
             CB_Species.DisplayMember = "Text";
             CB_Species.ValueMember = "Value";
@@ -39,7 +44,7 @@ namespace pk3DS
 
         private readonly byte[][] files;
         private int entry = -1;
-        private readonly string[] movelist = Main.getText(TextName.MoveNames);
+        private readonly string[] movelist = Main.Config.getText(TextName.MoveNames);
         private bool dumping;
         private readonly int[] baseForms, formVal;
         private void setupDGV()
@@ -70,7 +75,7 @@ namespace pk3DS
         private Learnset pkm;
         private void getList()
         {
-            entry = Util.getIndex(CB_Species);
+            entry = WinFormsUtil.getIndex(CB_Species);
             int s = baseForms[entry];
             int f = formVal[entry];
             if (entry <= Main.Config.MaxSpeciesID)
@@ -125,68 +130,32 @@ namespace pk3DS
 
         private void B_RandAll_Click(object sender, EventArgs e)
         {
-            // ORAS: 10682 moves learned on levelup/birth. 
-            // 5593 are STAB. 52.3% are STAB. 
-            // Steelix learns the most @ 25 (so many level 1)!
-            // Move relearner ingame does not behave properly if the count exceeds 25:
-            // https://twitter.com/Drayano60/status/630044237883666433
-            Random rnd = new Random();
+            setList();
+            var sets = files.Select(z => new Learnset7(z)).ToArray();
+            var banned = new List<int>(new[] {165, 621, 464}.Concat(Legal.Z_Moves)); // Struggle, Hyperspace Fury, Dark Void
+            if (CHK_NoFixedDamage.Checked)
+                banned.AddRange(MoveRandomizer.FixedDamageMoves);
 
-            int[] firstMoves = { 1, 40, 52, 55, 64, 71, 84, 98, 122, 141 };
-            // Pound, Poison Sting, Ember, Water Gun, Peck, Absorb, Thunder Shock, Quick Attack, Lick, Leech Life
-            
-            int[] banned = new[] { 165, 621, 464 }.Concat(Legal.Z_Moves).ToArray(); // Struggle, Hyperspace Fury, Dark Void
-
-            // Move Stats
-            Move[] moveTypes = Main.Config.Moves;
-
-            // Set up Randomized Moves
-            int[] randomMoves = Enumerable.Range(1, movelist.Length - 1).Select(i => i).ToArray();
-            Util.Shuffle(randomMoves);
-            int ctr = 0;
-
-            for (int i = 0; i < CB_Species.Items.Count; i++)
+            var rand = new LearnsetRandomizer(Main.Config, sets)
             {
-                CB_Species.SelectedIndex = i; // Get new Species
-                int count = dgv.Rows.Count - 1;
-                int species = Util.getIndex(CB_Species);
-                if (CHK_Expand.Checked && (int)NUD_Moves.Value > count)
-                    dgv.Rows.AddCopies(count, (int)NUD_Moves.Value - count);
-
-                // Default First Move
-                dgv.Rows[0].Cells[0].Value = 1;
-                dgv.Rows[0].Cells[1].Value = movelist[firstMoves[rnd.Next(0, firstMoves.Length)]];
-                for (int j = 1; j < dgv.Rows.Count - 1; j++)
-                {
-                    // Assign New Moves
-                    bool forceSTAB = CHK_STAB.Checked && rnd.Next(0, 99) < NUD_STAB.Value;
-                    int move = Randomizer.getRandomSpecies(ref randomMoves, ref ctr);
-
-                    while (banned.Contains(move) /* Invalid */
-                        || (forceSTAB && !Main.SpeciesStat[species].Types.Contains(moveTypes[move].Type))) // STAB is required
-                        move = Randomizer.getRandomSpecies(ref randomMoves, ref ctr);
-
-                    // Assign Move
-                    dgv.Rows[j].Cells[1].Value = movelist[move];
-                    // Assign Level
-                    if (j >= count)
-                    {
-                        string level = (dgv.Rows[count - 1].Cells[0].Value ?? 0).ToString();
-                        ushort lv;
-                        UInt16.TryParse(level, out lv);
-                        if (lv > 100) lv = 100;
-                        dgv.Rows[j].Cells[0].Value = lv + (j - count) + 1;
-                    }
-                    if (CHK_Spread.Checked)
-                        dgv.Rows[j].Cells[0].Value = (j * (NUD_Level.Value / (dgv.Rows.Count - 1))).ToString();
-                }
-            }
-            CB_Species.SelectedIndex = 0;
-            Util.Alert("All Pokemon's Level Up Moves have been randomized!");
+                Expand = CHK_Expand.Checked,
+                ExpandTo = (int) NUD_Moves.Value,
+                Spread = CHK_Spread.Checked,
+                SpreadTo = (int) NUD_Level.Value,
+                STAB = CHK_STAB.Checked,
+                rSTABPercent = NUD_STAB.Value,
+                STABFirst = CHK_STAB.Checked,
+                BannedMoves = banned,
+                Learn4Level1 = CHK_4MovesLvl1.Checked,
+            };
+            rand.Execute();
+            sets.Select(z => z.Write()).ToArray().CopyTo(files, 0);
+            getList();
+            WinFormsUtil.Alert("All Pokémon's Level Up Moves have been randomized!");
         }
         private void B_Dump_Click(object sender, EventArgs e)
         {
-            if (DialogResult.Yes != Util.Prompt(MessageBoxButtons.YesNo, "Dump all Egg Moves to Text File?"))
+            if (DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Dump all Level Up Moves to Text File?"))
                 return;
 
             dumping = true;
@@ -249,7 +218,7 @@ namespace pk3DS
                         stab++;
                 }
             }
-            Util.Alert($"Moves Learned: {movectr}\r\nMost Learned: {max} @ {spec}\r\nSTAB Count: {stab}");
+            WinFormsUtil.Alert($"Moves Learned: {movectr}\r\nMost Learned: {max} @ {spec}\r\nSTAB Count: {stab}");
         }
     }
 }

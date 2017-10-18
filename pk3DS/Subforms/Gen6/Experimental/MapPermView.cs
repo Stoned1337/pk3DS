@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
-using pk3DS.Properties;
+using pk3DS.Core.CTR;
 
 namespace pk3DS.Subforms
 {
@@ -27,7 +27,7 @@ namespace pk3DS.Subforms
         public Bitmap getMapImage(bool crop = false, bool entity = true, bool sliceArea = false)
         {
             // Load MM
-            byte[][] MM = CTR.mini.unpackMini(File.ReadAllBytes(MapMatrixes[DrawMap]), "MM");
+            byte[][] MM = mini.unpackMini(File.ReadAllBytes(MapMatrixes[DrawMap]), "MM");
             var mm = OWSE.mm = new MapMatrix(MM);
 
             // Unknown
@@ -39,10 +39,10 @@ namespace pk3DS.Subforms
             {
                 if (mm.EntryList[i] == 0xFFFF) // Mystery Zone
                     continue;
-                byte[][] GR = CTR.mini.unpackMini(File.ReadAllBytes(MapGRs[mm.EntryList[i]]), "GR");
+                byte[][] GR = mini.unpackMini(File.ReadAllBytes(MapGRs[mm.EntryList[i]]), "GR");
                 mm.Entries[i] = new MapMatrix.Entry(GR[0]) {coll = new MapMatrix.Collision(GR[2])};
             }
-            mapScale = (int)NUD_Scale.Value;
+            mapScale = Math.Max(1, (int)NUD_Scale.Value);
             Bitmap img = mm.Preview(mapScale, (int)NUD_Flavor.Value);
 
             baseImage = (Bitmap)img.Clone();
@@ -52,7 +52,7 @@ namespace pk3DS.Subforms
                 int area = 40*mapScale;
                 for (int x = 0; x < img.Width; x++)
                     for (int y = 0; y < img.Height; y++)
-                        if ((x % area == 0) || (y % area == 0))
+                        if (x % area == 0 || y % area == 0)
                             img.SetPixel(x,y,Color.FromArgb(0x10,0xFF,0,0));
             }
 
@@ -60,7 +60,7 @@ namespace pk3DS.Subforms
                 img = overlayEntities(img);
 
             if (crop)
-                img = Util.TrimBitmap(img);
+                img = WinFormsUtil.TrimBitmap(img);
 
             return img;
         }
@@ -77,14 +77,14 @@ namespace pk3DS.Subforms
                 int y = e.Y;
                 for (int sx = 0; sx < e.WX; sx++) // Stretch X
                     for (int sy = 0; sy < e.WY; sy++) // Stretch Y
-                        try { Util.LayerImage(img, Resources.F, (x + sx) * mapScale, (y + sy) * mapScale, opacity); }
+                        try { WinFormsUtil.LayerImage(img, Properties.Resources.F, (x + sx) * mapScale, (y + sy) * mapScale, opacity); }
                         catch { }
             }
             foreach (var e in OWSE.CurrentZone.Entities.NPCs)
             {
                 int x = e.X;
                 int y = e.Y;
-                try { Util.LayerImage(img, Resources.N, x * mapScale, y * mapScale, opacity); }
+                try { WinFormsUtil.LayerImage(img, Properties.Resources.N, x * mapScale, y * mapScale, opacity); }
                 catch { }
             }
             foreach (var e in OWSE.CurrentZone.Entities.Warps)
@@ -93,7 +93,7 @@ namespace pk3DS.Subforms
                 int y = (int)e.pY; // shifted warps look weird
                 for (int sx = 0; sx < e.Width; sx++) // Stretch X
                     for (int sy = 0; sy < e.Height; sy++) // Stretch Y
-                        try { Util.LayerImage(img, Resources.W, (x + sx) * mapScale, (y + sy) * mapScale, opacity); }
+                        try { WinFormsUtil.LayerImage(img, Properties.Resources.W, (x + sx) * mapScale, (y + sy) * mapScale, opacity); }
                         catch { }
             }
             foreach (var e in OWSE.CurrentZone.Entities.Triggers1)
@@ -102,7 +102,7 @@ namespace pk3DS.Subforms
                 int y = e.Y;
                 for (int sx = 0; sx < e.Width; sx++) // Stretch X
                     for (int sy = 0; sy < e.Height; sy++) // Stretch Y
-                        try { Util.LayerImage(img, Resources.T1, (x + sx) * mapScale, (y + sy) * mapScale, opacity); }
+                        try { WinFormsUtil.LayerImage(img, Properties.Resources.T1, (x + sx) * mapScale, (y + sy) * mapScale, opacity); }
                         catch { }
             }
             foreach (var e in OWSE.CurrentZone.Entities.Triggers2)
@@ -111,7 +111,7 @@ namespace pk3DS.Subforms
                 int y = e.Y;
                 for (int sx = 0; sx < e.Width; sx++) // Stretch X
                     for (int sy = 0; sy < e.Height; sy++) // Stretch Y
-                        try { Util.LayerImage(img, Resources.T2, (x + sx) * mapScale, (y + sy) * mapScale, opacity); }
+                        try { WinFormsUtil.LayerImage(img, Properties.Resources.T2, (x + sx) * mapScale, (y + sy) * mapScale, opacity); }
                         catch { }
             }
 
@@ -122,7 +122,7 @@ namespace pk3DS.Subforms
                 int y = (int)OWSE.CurrentZone.ZD.pY2;
                 for (int sx = 0; sx < 1; sx++) // Stretch X
                     for (int sy = 0; sy < 1; sy++) // Stretch Y
-                        try { Util.LayerImage(img, Resources.FLY, (x + sx) * mapScale, (y + sy) * mapScale, opacity/2); }
+                        try { WinFormsUtil.LayerImage(img, Properties.Resources.FLY, (x + sx) * mapScale, (y + sy) * mapScale, opacity/2); }
                         catch { }
             }
             // Unknown
@@ -186,10 +186,10 @@ namespace pk3DS.Subforms
 
         private void dclickMap(object sender, EventArgs e)
         {
-            DialogResult dr = Util.Prompt(MessageBoxButtons.YesNoCancel, "Copy image to Clipboard?",
+            DialogResult dr = WinFormsUtil.Prompt(MessageBoxButtons.YesNoCancel, "Copy image to Clipboard?",
                 "Yes: Map & Overworlds" + Environment.NewLine + "No: Map Only");
             if (dr == DialogResult.No) // Map Only
-                Clipboard.SetImage(Util.TrimBitmap(baseImage));
+                Clipboard.SetImage(WinFormsUtil.TrimBitmap(baseImage));
             if (dr == DialogResult.Yes)
                 Clipboard.SetImage(PB_Map.Image);
         }
